@@ -1,0 +1,1844 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GJB 8895 单侧置信下限计算器</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #667085;
+      --line: #d8dee8;
+      --panel: #ffffff;
+      --soft: #f4f7fb;
+      --navy: #132238;
+      --teal: #0f766e;
+      --teal-soft: #e6f5f3;
+      --gold: #b7791f;
+      --red: #b42318;
+      --red-soft: #fee4e2;
+      --green: #067647;
+      --green-soft: #dcfae6;
+      --shadow: 0 24px 60px rgba(23, 32, 51, 0.16);
+      --shadow-soft: 0 10px 24px rgba(23, 32, 51, 0.1);
+      --shadow-lift: 0 18px 36px rgba(15, 35, 60, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(98, 178, 211, 0.28) 0, rgba(98, 178, 211, 0) 28%),
+        radial-gradient(circle at 82% 32%, rgba(15, 118, 110, 0.2) 0, rgba(15, 118, 110, 0) 25%),
+        linear-gradient(118deg, rgba(15, 118, 110, 0.18) 0%, rgba(15, 118, 110, 0) 34%),
+        linear-gradient(242deg, rgba(61, 102, 158, 0.2) 0%, rgba(61, 102, 158, 0) 38%),
+        linear-gradient(180deg, #16263c 0%, #18395a 26%, #d5eafa 26.2%, #edf4fb 72%, #f8fafc 100%);
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.46), rgba(0, 0, 0, 0.04) 58%, transparent 100%);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      left: 50%;
+      top: 190px;
+      width: min(980px, 82vw);
+      height: 420px;
+      transform: translateX(-50%);
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse at center, rgba(255, 255, 255, 0.46) 0%, rgba(255, 255, 255, 0.22) 38%, rgba(255, 255, 255, 0) 70%);
+      filter: blur(22px);
+      opacity: 0.85;
+    }
+
+    .shell {
+      width: min(1180px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 34px 0 42px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      color: #fff;
+      margin-bottom: 30px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 46px;
+      height: 46px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      letter-spacing: 0;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 5px 0 0;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 14px;
+    }
+
+    .standard-chip {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 13px;
+      border-radius: 8px;
+      color: #d7f7f3;
+      background: rgba(15, 118, 110, 0.28);
+      border: 1px solid rgba(215, 247, 243, 0.24);
+      font-size: 14px;
+    }
+
+    .nav-tabs {
+      display: inline-flex;
+      gap: 8px;
+      padding: 6px;
+      margin: 0 0 18px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .tab-button {
+      height: 38px;
+      border-radius: 8px;
+      padding: 0 16px;
+      color: rgba(255, 255, 255, 0.78);
+      background: transparent;
+      border: 1px solid transparent;
+      box-shadow: none;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .tab-button.active {
+      color: #0f766e;
+      background: #ffffff;
+      border-color: rgba(255, 255, 255, 0.55);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      align-items: stretch;
+      padding: 14px;
+      border: 1px solid rgba(216, 222, 232, 0.72);
+      border-radius: 8px;
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(230, 244, 255, 0.68)),
+        rgba(255, 255, 255, 0.72);
+      box-shadow:
+        0 26px 70px rgba(15, 35, 60, 0.22),
+        0 9px 18px rgba(15, 35, 60, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(10px);
+      position: relative;
+    }
+
+    .main::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 28%);
+    }
+
+    .panel {
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 253, 255, 0.94));
+      border: 1px solid rgba(206, 216, 229, 0.92);
+      border-radius: 8px;
+      overflow: hidden;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      box-shadow:
+        var(--shadow-lift),
+        0 1px 0 rgba(255, 255, 255, 0.9) inset;
+      position: relative;
+      z-index: 1;
+      transform: translateZ(0);
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 3px;
+      background: linear-gradient(90deg, rgba(15, 118, 110, 0.72), rgba(62, 129, 190, 0.2), rgba(255, 255, 255, 0.7));
+      pointer-events: none;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 249, 253, 0.94) 100%);
+      box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    .panel-note {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .form {
+      padding: 22px;
+      display: grid;
+      gap: 18px;
+      align-content: start;
+      flex: 1;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    label {
+      display: block;
+      color: #344054;
+      font-weight: 800;
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      color: var(--ink);
+      background: #fff;
+      font-size: 15px;
+      outline: none;
+      box-shadow: inset 0 1px 2px rgba(23, 32, 51, 0.04);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    }
+
+    input,
+    select {
+      height: 46px;
+      padding: 0 13px;
+    }
+
+    textarea {
+      min-height: 136px;
+      resize: vertical;
+      padding: 12px 13px;
+      line-height: 1.55;
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--teal);
+      box-shadow:
+        0 0 0 4px rgba(15, 118, 110, 0.12),
+        0 10px 18px rgba(15, 118, 110, 0.08);
+    }
+
+    .hint {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+      line-height: 1.45;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 2px;
+    }
+
+    button {
+      height: 46px;
+      border: 0;
+      border-radius: 8px;
+      padding: 0 18px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .primary {
+      color: #fff;
+      background: linear-gradient(180deg, #12847b 0%, #0b6d66 100%);
+      box-shadow:
+        0 12px 22px rgba(15, 118, 110, 0.26),
+        inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    }
+
+    .secondary {
+      color: #344054;
+      background: linear-gradient(180deg, #f4f7fb 0%, #e8eef5 100%);
+      border: 1px solid #d8dee8;
+      box-shadow:
+        0 8px 16px rgba(23, 32, 51, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .result-card {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .hero-result {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      padding: 18px;
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(232, 253, 250, 0.98) 0%, rgba(248, 251, 255, 0.98) 100%);
+      border: 1px solid #c7eee9;
+      box-shadow:
+        0 14px 28px rgba(15, 118, 110, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      margin-bottom: 18px;
+    }
+
+    .result-label {
+      color: #475467;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .result-value {
+      font-size: 36px;
+      line-height: 1;
+      font-weight: 900;
+      color: var(--teal);
+    }
+
+    .badge {
+      min-width: 82px;
+      text-align: center;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .badge.pass {
+      color: var(--green);
+      background: var(--green-soft);
+      border: 1px solid #abefc6;
+    }
+
+    .badge.fail {
+      color: var(--red);
+      background: var(--red-soft);
+      border: 1px solid #fecdca;
+    }
+
+    .badge.neutral {
+      color: var(--gold);
+      background: #fff7e6;
+      border: 1px solid #f6d99c;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+      box-shadow:
+        0 8px 16px rgba(23, 32, 51, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 7px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .formula {
+      border-radius: 8px;
+      background: linear-gradient(180deg, #f7fbff 0%, #eef8fb 100%);
+      color: #172033;
+      padding: 17px 18px;
+      border: 1px solid #c9e3ee;
+      box-shadow:
+        0 10px 22px rgba(23, 62, 89, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      font-family: "Cambria Math", Cambria, "Times New Roman", serif;
+      font-size: 20px;
+      line-height: 1.45;
+      overflow-x: auto;
+      text-align: center;
+    }
+
+    .formula math {
+      font-family: "Cambria Math", Cambria, "Times New Roman", serif;
+      font-size: 1.08em;
+    }
+
+    .formula-caption {
+      margin-top: 8px;
+      color: #667085;
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .message {
+      margin-top: 14px;
+      color: #475467;
+      font-size: 14px;
+      line-height: 1.7;
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .footer {
+      margin-top: 18px;
+      color: #667085;
+      font-size: 12px;
+      line-height: 1.65;
+      margin-bottom: 0;
+    }
+
+    .wide-main {
+      grid-template-columns: minmax(360px, 0.82fr) minmax(0, 1.18fr);
+    }
+
+    .scheme-result {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .result-emphasis {
+      grid-column: span 3;
+      padding: 18px;
+      border-radius: 8px;
+      border: 1px solid #c7eee9;
+      background: linear-gradient(135deg, #edfdfb 0%, #f8fbff 100%);
+      box-shadow:
+        0 16px 32px rgba(15, 118, 110, 0.13),
+        inset 0 1px 0 rgba(255, 255, 255, 0.92);
+    }
+
+    .result-emphasis span {
+      display: block;
+      color: #475467;
+      font-size: 13px;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .result-emphasis strong {
+      display: block;
+      color: var(--teal);
+      font-size: 38px;
+      line-height: 1;
+      font-weight: 950;
+    }
+
+    .table-wrap {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: auto;
+      max-height: 460px;
+      background: #ffffff;
+      box-shadow:
+        0 12px 28px rgba(23, 32, 51, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+
+    .scheme-table {
+      width: 100%;
+      min-width: 780px;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .scheme-table th,
+    .scheme-table td {
+      padding: 9px 10px;
+      text-align: right;
+      border-bottom: 1px solid #e6ebf2;
+      border-right: 1px solid #edf1f5;
+      white-space: nowrap;
+    }
+
+    .scheme-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      color: #344054;
+      background: #f5f8fb;
+      font-weight: 900;
+    }
+
+    .scheme-table th:first-child,
+    .scheme-table td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      text-align: center;
+      background: #f8fafc;
+      font-weight: 900;
+    }
+
+    .scheme-table th:first-child {
+      z-index: 3;
+    }
+
+    .table-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .table-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .full-span {
+      grid-column: 1 / -1;
+    }
+
+    .compact-form {
+      gap: 14px;
+    }
+
+    .formula-list {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .formula-mini {
+      border-radius: 8px;
+      background: linear-gradient(180deg, #f8fbff 0%, #eef8fb 100%);
+      border: 1px solid #d8e9f2;
+      padding: 12px;
+      overflow-x: auto;
+      font-family: "Cambria Math", Cambria, "Times New Roman", serif;
+      font-size: 17px;
+      text-align: center;
+    }
+
+    .decision-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .decision {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .decision strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .decision span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .status {
+      min-width: 64px;
+      border-radius: 8px;
+      padding: 8px 10px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 950;
+    }
+
+    .status.pass {
+      color: var(--green);
+      background: var(--green-soft);
+      border: 1px solid #abefc6;
+    }
+
+    .status.fail {
+      color: var(--red);
+      background: var(--red-soft);
+      border: 1px solid #fecdca;
+    }
+
+    .status.neutral {
+      color: var(--gold);
+      background: #fff7e6;
+      border: 1px solid #f6d99c;
+    }
+
+    .data-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .mini-button {
+      height: 32px;
+      padding: 0 11px;
+      font-size: 13px;
+      color: #344054;
+      background: linear-gradient(180deg, #f4f7fb 0%, #e9eff6 100%);
+      border: 1px solid #d8dee8;
+      box-shadow:
+        0 5px 12px rgba(23, 32, 51, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+
+    .warning {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: #854a0e;
+      background: #fff7e6;
+      border: 1px solid #f6d99c;
+      font-size: 13px;
+      line-height: 1.55;
+      font-weight: 700;
+    }
+
+    sub,
+    .math-var sub {
+      font-size: 0.68em;
+      line-height: 0;
+      vertical-align: -0.38em;
+      font-weight: 850;
+    }
+
+    .math-var {
+      font-family: "Cambria Math", Cambria, "Times New Roman", serif;
+      font-style: italic;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+      @media (max-width: 900px) {
+      body {
+        background:
+          linear-gradient(118deg, rgba(15, 118, 110, 0.18) 0%, rgba(15, 118, 110, 0) 38%),
+          linear-gradient(242deg, rgba(61, 102, 158, 0.18) 0%, rgba(61, 102, 158, 0) 42%),
+          linear-gradient(180deg, #16263c 0%, #18395a 34%, #d5eafa 34.2%, #edf4fb 78%, #f8fafc 100%);
+      }
+
+      .topbar,
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      .wide-main {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .main {
+        display: grid;
+        padding: 12px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .shell {
+        width: min(100vw - 24px, 1180px);
+        padding-top: 20px;
+      }
+
+      h1 {
+        font-size: 23px;
+      }
+
+      .field-grid,
+      .metrics,
+      .hero-result,
+      .scheme-result {
+        grid-template-columns: 1fr;
+      }
+
+      .result-emphasis {
+        grid-column: span 1;
+      }
+
+      .nav-tabs {
+        display: grid;
+        width: 100%;
+      }
+
+      .panel-header,
+      .form,
+      .result-card {
+        padding: 16px;
+      }
+
+      .main {
+        padding: 8px;
+        gap: 10px;
+      }
+
+      .panel-note {
+        display: none;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark">GJB</div>
+        <div>
+          <h1>GJB 8895 单侧置信下限计算器</h1>
+          <p class="subtitle">适用于 FDR、FIR、S-FDR、S-FIR 等成败型测试性指标评估</p>
+        </div>
+      </div>
+      <div class="standard-chip">二项分布 · 单侧置信下限</div>
+    </header>
+
+    <nav class="nav-tabs" aria-label="功能切换">
+      <button class="tab-button active" type="button" data-page="lowerPage">单侧置信下限</button>
+      <button class="tab-button" type="button" data-page="schemePage">最低可接受值试验方案</button>
+      <button class="tab-button" type="button" data-page="maintainPage">GJB 2072 方法9</button>
+    </nav>
+
+    <section class="page active" id="lowerPage">
+    <section class="main">
+      <section class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">试验数据输入</h2>
+          <div class="panel-note">失败数 F = 样本量 n - 成功数</div>
+        </div>
+
+        <form class="form" id="calcForm">
+          <div class="field-grid">
+            <div>
+              <label for="metric">指标类型</label>
+              <select id="metric">
+                <option value="FDR">故障检测率 FDR</option>
+                <option value="FIR">故障隔离率 FIR</option>
+                <option value="S-FDR">严重故障检测率 S-FDR</option>
+                <option value="S-FIR">严重故障隔离率 S-FIR</option>
+                <option value="测试性指标">其他测试性指标</option>
+              </select>
+            </div>
+            <div>
+              <label for="confidence">置信度 C</label>
+              <input id="confidence" type="text" value="80%" inputmode="decimal" autocomplete="off">
+              <div class="hint">可输入 0.8、80 或 80%</div>
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <div>
+              <label for="sampleSize">样本量 n</label>
+              <input id="sampleSize" type="number" min="1" step="1" value="65">
+            </div>
+            <div>
+              <label for="failures">失败数 F</label>
+              <input id="failures" type="number" min="0" step="1" value="2">
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <div>
+              <label for="target">最低可接受值</label>
+              <input id="target" type="text" value="90%" inputmode="decimal" autocomplete="off">
+              <div class="hint">留空则只计算，不做合格判定</div>
+            </div>
+            <div>
+              <label for="digits">结果小数位</label>
+              <select id="digits">
+                <option value="2">2 位</option>
+                <option value="3">3 位</option>
+                <option value="4" selected>4 位</option>
+                <option value="5">5 位</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="primary" type="submit">计算置信下限</button>
+            <button class="secondary" type="button" id="resetBtn">恢复示例</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">计算结果</h2>
+          <div class="panel-note" id="metricName">FDR</div>
+        </div>
+
+        <div class="result-card">
+          <div class="hero-result">
+            <div>
+              <div class="result-label">单侧置信下限</div>
+              <div class="result-value" id="lowerBound">93.5316%</div>
+            </div>
+            <div class="badge pass" id="conclusion">PASS</div>
+          </div>
+
+          <div class="metrics">
+            <div class="metric">
+              <span>点估计</span>
+              <strong id="pointEstimate">96.9231%</strong>
+            </div>
+            <div class="metric">
+              <span>成功数</span>
+              <strong id="successes">63</strong>
+            </div>
+            <div class="metric">
+              <span>失败数</span>
+              <strong id="failureCount">2</strong>
+            </div>
+            <div class="metric">
+              <span>置信度</span>
+              <strong id="confidenceOut">80.0000%</strong>
+            </div>
+          </div>
+
+          <div class="formula">
+            <math display="block" aria-label="GJB 8895 single-sided confidence lower bound equation">
+              <mrow>
+                <munderover>
+                  <mo>&#x2211;</mo>
+                  <mrow>
+                    <mi>i</mi>
+                    <mo>=</mo>
+                    <mn>0</mn>
+                  </mrow>
+                  <mi>F</mi>
+                </munderover>
+                <msubsup>
+                  <mi>C</mi>
+                  <mi>n</mi>
+                  <mi>i</mi>
+                </msubsup>
+                <msup>
+                  <mi>P</mi>
+                  <mrow>
+                    <mi>n</mi>
+                    <mo>-</mo>
+                    <mi>i</mi>
+                  </mrow>
+                </msup>
+                <msup>
+                  <mrow>
+                    <mo>(</mo>
+                    <mn>1</mn>
+                    <mo>-</mo>
+                    <mi>P</mi>
+                    <mo>)</mo>
+                  </mrow>
+                  <mi>i</mi>
+                </msup>
+                <mo>=</mo>
+                <mn>1</mn>
+                <mo>-</mo>
+                <mi>C</mi>
+              </mrow>
+            </math>
+            <div class="formula-caption">其中 P 为待求单侧置信下限，F 为失败数，n 为样本量，C 为置信度</div>
+          </div>
+
+          <div class="message" id="message">
+            当前 FDR 单侧置信下限为 93.5316%，不低于最低可接受值 90.0000%，判定为通过。
+          </div>
+
+          <div class="footer">
+            说明：本工具采用成败型二项分布模型，通过二分法求解 P。输入的失败数 F 表示未检测、未隔离或未达到规定要求的样本数。
+          </div>
+        </div>
+      </section>
+    </section>
+    </section>
+
+    <section class="page" id="schemePage">
+      <section class="main wide-main">
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">最低可接受值试验方案</h2>
+            <div class="panel-note">只考虑订购方风险 β 与最低可接受值 <span class="math-var">q<sub>1</sub></span></div>
+          </div>
+
+          <form class="form" id="schemeForm">
+            <div class="formula">
+              <math display="block" aria-label="Minimum acceptable value test plan equation">
+                <mrow>
+                  <munderover>
+                    <mo>&#x2211;</mo>
+                    <mrow>
+                      <mi>d</mi>
+                      <mo>=</mo>
+                      <mn>0</mn>
+                    </mrow>
+                    <mi>r</mi>
+                  </munderover>
+                  <msubsup>
+                    <mi>C</mi>
+                    <mi>n</mi>
+                    <mi>d</mi>
+                  </msubsup>
+                  <msubsup>
+                    <mi>q</mi>
+                    <mn>1</mn>
+                    <mrow>
+                      <mi>n</mi>
+                      <mo>-</mo>
+                      <mi>d</mi>
+                    </mrow>
+                  </msubsup>
+                  <msup>
+                    <mrow>
+                      <mo>(</mo>
+                      <mn>1</mn>
+                      <mo>-</mo>
+                      <msub>
+                        <mi>q</mi>
+                        <mn>1</mn>
+                      </msub>
+                      <mo>)</mo>
+                    </mrow>
+                    <mi>d</mi>
+                  </msup>
+                  <mo>&#x2264;</mo>
+                  <mi>&#x03B2;</mi>
+                </mrow>
+              </math>
+              <div class="formula-caption">其中 r 为合格判定数，n 为样本量，<span class="math-var">q<sub>1</sub></span> 为测试性指标最低可接受值，β 为订购方风险</div>
+            </div>
+
+            <div class="field-grid">
+              <div>
+                <label for="q1Input">最低可接受值 <span class="math-var">q<sub>1</sub></span></label>
+                <input id="q1Input" type="text" value="90%" inputmode="decimal" autocomplete="off">
+                <div class="hint">可输入 0.9、90 或 90%</div>
+              </div>
+              <div>
+                <label for="betaInput">订购方风险 β</label>
+                <input id="betaInput" type="text" value="10%" inputmode="decimal" autocomplete="off">
+                <div class="hint">示例表 J.2 对应 β = 0.1</div>
+              </div>
+            </div>
+
+            <div class="field-grid">
+              <div>
+                <label for="rInput">合格判定数 r</label>
+                <input id="rInput" type="number" min="0" step="1" value="0">
+                <div class="hint">失败样本次数不大于 r 时，判为合格</div>
+              </div>
+              <div>
+                <label for="maxSearchN">最大搜索样本量</label>
+                <input id="maxSearchN" type="number" min="1" step="1" value="10000">
+                <div class="hint">若未找到解，可适当增大</div>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="primary" type="submit">求解最小样本量</button>
+              <button class="secondary" type="button" id="schemeResetBtn">恢复示例</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">求解结果与方案表</h2>
+            <div class="panel-note" id="schemeBetaName">β = 10.0000%</div>
+          </div>
+
+          <div class="result-card">
+            <div class="scheme-result">
+              <div class="result-emphasis">
+                <span>最小样本量 n</span>
+                <strong id="schemeN">22</strong>
+              </div>
+              <div class="metric">
+                <span><span class="math-var">q<sub>1</sub></span></span>
+                <strong id="schemeQ1">90.0000%</strong>
+              </div>
+              <div class="metric">
+                <span>β</span>
+                <strong id="schemeBeta">10.0000%</strong>
+              </div>
+              <div class="metric">
+                <span>合格判定数 r</span>
+                <strong id="schemeR">0</strong>
+              </div>
+            </div>
+
+            <div class="message" id="schemeMessage">
+              当 <span class="math-var">q<sub>1</sub></span> = 90.0000%、β = 10.0000%、r = 0 时，满足公式的最小样本量为 22。
+            </div>
+
+            <div class="table-toolbar">
+              <h3 class="table-title">最低可接受值试验方案表</h3>
+              <div class="panel-note">自动生成 r = 0..20，<span class="math-var">q<sub>1</sub></span> = 0.85..0.99</div>
+            </div>
+            <div class="table-wrap">
+              <table class="scheme-table" id="schemeTable"></table>
+            </div>
+
+            <div class="footer">
+              说明：试验方案选定后，即确定样本量 n 与合格判定数 r。若失败样本次数不大于 r，判为合格；否则判为不合格。
+            </div>
+          </div>
+        </section>
+      </section>
+    </section>
+
+    <section class="page" id="maintainPage">
+      <section class="main wide-main">
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">维修时间数据填写</h2>
+            <div class="panel-note">GJB 2072-94 附录A 试验方法9</div>
+          </div>
+
+          <form class="form compact-form" id="maintainForm">
+            <div class="field-grid">
+              <div>
+                <label for="correctiveTimes">修复性维修时间 <span class="math-var">X<sub>cti</sub></span></label>
+                <textarea id="correctiveTimes" placeholder="每行或用逗号输入一个维修时间，例如：&#10;18, 22, 16, 25, 20"></textarea>
+                <div class="hint">用于平均修复时间、平均维修时间、最大修复时间检验；最大修复时间要求数据均大于 0。</div>
+                <div class="data-actions">
+                  <button class="mini-button" type="button" id="loadMaintainSample">载入示例数据</button>
+                  <button class="mini-button" type="button" id="clearMaintainData">清空数据</button>
+                </div>
+              </div>
+              <div>
+                <label for="preventiveTimes">预防性维修时间 <span class="math-var">X<sub>pti</sub></span></label>
+                <textarea id="preventiveTimes" placeholder="如需检验平均预防性维修时间或平均维修时间，在此输入预防性维修样本"></textarea>
+                <div class="hint">检验预防性维修参数时，标准要求另附加 30 个预防性维修作业样本。</div>
+              </div>
+            </div>
+
+            <div class="field-grid">
+              <div>
+                <label for="betaMaintain">订购方风险 β</label>
+                <input id="betaMaintain" type="text" value="10%" inputmode="decimal" autocomplete="off">
+              </div>
+              <div>
+                <label for="percentileMaintain">最大修复时间百分位 p</label>
+                <input id="percentileMaintain" type="text" value="95%" inputmode="decimal" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="field-grid">
+              <div>
+                <label for="fcInput">修复性维修频数 fc</label>
+                <input id="fcInput" type="number" min="0" step="0.0001" value="1">
+              </div>
+              <div>
+                <label for="fpInput">预防性维修频数 fp</label>
+                <input id="fpInput" type="number" min="0" step="0.0001" value="1">
+              </div>
+            </div>
+
+            <div class="field-grid">
+              <div>
+                <label for="mctInput"><span class="math-var">M<sub>ct</sub></span> 平均修复时间要求</label>
+                <input id="mctInput" type="number" min="0" step="0.0001" value="30">
+              </div>
+              <div>
+                <label for="mptInput"><span class="math-var">M<sub>pt</sub></span> 平均预防性维修时间要求</label>
+                <input id="mptInput" type="number" min="0" step="0.0001" value="25">
+              </div>
+            </div>
+
+            <div class="field-grid">
+              <div>
+                <label for="mpcInput"><span class="math-var">M<sub>p/c</sub></span> 平均维修时间要求</label>
+                <input id="mpcInput" type="number" min="0" step="0.0001" value="28">
+              </div>
+              <div>
+                <label for="mmaxInput"><span class="math-var">M<sub>maxct</sub></span> 最大修复时间要求</label>
+                <input id="mmaxInput" type="number" min="0" step="0.0001" value="55">
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="primary" type="submit">计算维修性判决</button>
+              <button class="secondary" type="button" id="maintainResetBtn">恢复默认</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">统计量与判决条件</h2>
+            <div class="panel-note" id="maintainRiskName">β = 10.0000%</div>
+          </div>
+
+          <div class="result-card">
+            <div class="formula-list">
+              <div class="formula-mini">
+                <math display="block">
+                  <mrow>
+                    <mover><mi>X</mi><mo>_</mo></mover><msub><mi></mi><mi>ct</mi></msub>
+                    <mo>=</mo>
+                    <mfrac><mn>1</mn><msub><mi>n</mi><mi>c</mi></msub></mfrac>
+                    <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><msub><mi>n</mi><mi>c</mi></msub></munderover>
+                    <msub><mi>X</mi><mrow><mi>cti</mi></mrow></msub>
+                    <mo>,</mo>
+                    <msubsup><mi>d</mi><mi>ct</mi><mn>2</mn></msubsup>
+                    <mo>=</mo>
+                    <mfrac><mn>1</mn><mrow><msub><mi>n</mi><mi>c</mi></msub><mo>-</mo><mn>1</mn></mrow></mfrac>
+                    <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><msub><mi>n</mi><mi>c</mi></msub></munderover>
+                    <msup><mrow><mo>(</mo><msub><mi>X</mi><mi>cti</mi></msub><mo>-</mo><mover><msub><mi>X</mi><mi>ct</mi></msub><mo>_</mo></mover><mo>)</mo></mrow><mn>2</mn></msup>
+                  </mrow>
+                </math>
+              </div>
+              <div class="formula-mini">
+                <math display="block">
+                  <mrow>
+                    <mover><msub><mi>X</mi><mrow><mi>p/c</mi></mrow></msub><mo>_</mo></mover>
+                    <mo>=</mo>
+                    <mfrac>
+                      <mrow><msub><mi>f</mi><mi>c</mi></msub><mover><msub><mi>X</mi><mi>ct</mi></msub><mo>_</mo></mover><mo>+</mo><msub><mi>f</mi><mi>p</mi></msub><mover><msub><mi>X</mi><mi>pt</mi></msub><mo>_</mo></mover></mrow>
+                      <mrow><msub><mi>f</mi><mi>c</mi></msub><mo>+</mo><msub><mi>f</mi><mi>p</mi></msub></mrow>
+                    </mfrac>
+                  </mrow>
+                </math>
+              </div>
+              <div class="formula-mini">
+                <math display="block">
+                  <mrow>
+                    <msub><mi>X</mi><mrow><mi>maxct</mi></mrow></msub>
+                    <mo>=</mo>
+                    <mi>exp</mi>
+                    <mo>{</mo>
+                    <mover><mrow><mi>ln</mi><msub><mi>X</mi><mi>ct</mi></msub></mrow><mo>_</mo></mover>
+                    <mo>+</mo>
+                    <mi>&#x03C8;</mi><msub><mi>s</mi><mrow><mi>lnX</mi></mrow></msub>
+                    <mo>}</mo>
+                  </mrow>
+                </math>
+              </div>
+            </div>
+
+            <div class="scheme-result">
+              <div class="metric">
+                <span>nc / np</span>
+                <strong id="maintainCounts">0 / 0</strong>
+              </div>
+              <div class="metric">
+                <span>平均修复时间</span>
+                <strong id="ctMean">--</strong>
+              </div>
+              <div class="metric">
+                <span>修复时间方差</span>
+                <strong id="ctVariance">--</strong>
+              </div>
+              <div class="metric">
+                <span>平均预防性维修时间</span>
+                <strong id="ptMean">--</strong>
+              </div>
+              <div class="metric">
+                <span>预防性维修时间方差</span>
+                <strong id="ptVariance">--</strong>
+              </div>
+              <div class="metric">
+                <span>平均维修时间</span>
+                <strong id="pcMean">--</strong>
+              </div>
+              <div class="metric">
+                <span>最大修复时间估计</span>
+                <strong id="maxCtEstimate">--</strong>
+              </div>
+              <div class="metric">
+                <span>风险 Z 值</span>
+                <strong id="maintainZ">--</strong>
+              </div>
+              <div class="metric">
+                <span>百分位 Z 值</span>
+                <strong id="maintainZp">--</strong>
+              </div>
+              <div class="metric">
+                <span>ψ</span>
+                <strong id="maintainPsi">--</strong>
+              </div>
+            </div>
+
+            <div class="warning" id="maintainWarning">样本量最小为 30。请输入维修时间数据后计算。</div>
+
+            <div class="decision-list" id="maintainDecisions"></div>
+
+            <div class="footer">
+              判决规则按截图 A52-A55：样本统计量不大于合同规定值扣除风险裕量后的判决限，则接受；否则拒绝。最大修复时间按对数正态分布估计。
+            </div>
+          </div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("calcForm");
+    const resetBtn = document.getElementById("resetBtn");
+    const schemeForm = document.getElementById("schemeForm");
+    const schemeResetBtn = document.getElementById("schemeResetBtn");
+    const maintainForm = document.getElementById("maintainForm");
+    const maintainResetBtn = document.getElementById("maintainResetBtn");
+    const loadMaintainSample = document.getElementById("loadMaintainSample");
+    const clearMaintainData = document.getElementById("clearMaintainData");
+    const tabButtons = document.querySelectorAll(".tab-button");
+
+    function parseRatio(value, fieldName, allowEmpty = false) {
+      const raw = String(value).trim();
+      if (allowEmpty && raw === "") return null;
+      if (raw === "") throw new Error(`${fieldName}不能为空`);
+      const normalized = raw.endsWith("%") ? raw.slice(0, -1) : raw;
+      let number = Number(normalized);
+      if (!Number.isFinite(number)) throw new Error(`${fieldName}格式不正确`);
+      if (raw.endsWith("%") || number > 1) number /= 100;
+      if (number <= 0 || number >= 1) throw new Error(`${fieldName}必须在 0 到 1 之间`);
+      return number;
+    }
+
+    function formatPercent(value, digits) {
+      return `${(value * 100).toFixed(digits)}%`;
+    }
+
+    function formatNumber(value, digits = 4) {
+      if (value === null || value === undefined || !Number.isFinite(value)) return "--";
+      return Number(value).toFixed(digits);
+    }
+
+    function logGamma(z) {
+      const coefficients = [
+        676.5203681218851,
+        -1259.1392167224028,
+        771.3234287776531,
+        -176.6150291621406,
+        12.507343278686905,
+        -0.13857109526572012,
+        9.984369578019572e-6,
+        1.5056327351493116e-7
+      ];
+
+      if (z < 0.5) {
+        return Math.log(Math.PI) - Math.log(Math.sin(Math.PI * z)) - logGamma(1 - z);
+      }
+
+      let x = 0.9999999999998099;
+      const shifted = z - 1;
+      for (let i = 0; i < coefficients.length; i += 1) {
+        x += coefficients[i] / (shifted + i + 1);
+      }
+      const t = shifted + coefficients.length - 0.5;
+      return 0.5 * Math.log(2 * Math.PI) + (shifted + 0.5) * Math.log(t) - t + Math.log(x);
+    }
+
+    function logBinomialPmf(n, k, p) {
+      if (k < 0 || k > n) return Number.NEGATIVE_INFINITY;
+      if (p <= 0) return k === 0 ? 0 : Number.NEGATIVE_INFINITY;
+      if (p >= 1) return k === n ? 0 : Number.NEGATIVE_INFINITY;
+
+      return (
+        logGamma(n + 1)
+        - logGamma(k + 1)
+        - logGamma(n - k + 1)
+        + k * Math.log(p)
+        + (n - k) * Math.log1p(-p)
+      );
+    }
+
+    function logSumExp(values) {
+      let max = Number.NEGATIVE_INFINITY;
+      for (const value of values) {
+        if (value > max) max = value;
+      }
+      if (max === Number.NEGATIVE_INFINITY) return max;
+
+      let sum = 0;
+      for (const value of values) {
+        sum += Math.exp(value - max);
+      }
+      return max + Math.log(sum);
+    }
+
+    function probabilityFromLogs(logValues) {
+      const value = Math.exp(logSumExp(logValues));
+      return Math.min(1, Math.max(0, value));
+    }
+
+    function binomialTailSuccessAtLeast(n, successes, p) {
+      if (successes <= 0) return 1;
+      if (successes > n) return 0;
+      if (p <= 0) return 0;
+      if (p >= 1) return 1;
+
+      if (successes > n / 2) {
+        const upperLogs = [];
+        for (let k = successes; k <= n; k += 1) {
+          upperLogs.push(logBinomialPmf(n, k, p));
+        }
+        return probabilityFromLogs(upperLogs);
+      }
+
+      const lowerLogs = [];
+      for (let k = 0; k < successes; k += 1) {
+        lowerLogs.push(logBinomialPmf(n, k, p));
+      }
+      const logLower = logSumExp(lowerLogs);
+      if (logLower === Number.NEGATIVE_INFINITY) return 1;
+      const lower = Math.exp(logLower);
+      return Math.min(1, Math.max(0, -Math.expm1(logLower)));
+    }
+
+    function lowerBound(n, failures, confidence) {
+      const successes = n - failures;
+      if (successes === 0) return 0;
+      const requiredTail = 1 - confidence;
+      let lo = 0;
+      let hi = 1;
+      for (let i = 0; i < 200; i += 1) {
+        const mid = (lo + hi) / 2;
+        const tail = binomialTailSuccessAtLeast(n, successes, mid);
+        if (tail < requiredTail) lo = mid;
+        else hi = mid;
+        if (hi - lo < 1e-12) break;
+      }
+      return (lo + hi) / 2;
+    }
+
+    function inverseNormal(p) {
+      if (p <= 0 || p >= 1) throw new Error("概率值必须在 0 到 1 之间");
+      const a = [
+        -39.69683028665376,
+        220.9460984245205,
+        -275.9285104469687,
+        138.357751867269,
+        -30.66479806614716,
+        2.506628277459239
+      ];
+      const b = [
+        -54.47609879822406,
+        161.5858368580409,
+        -155.6989798598866,
+        66.80131188771972,
+        -13.28068155288572
+      ];
+      const c = [
+        -0.007784894002430293,
+        -0.3223964580411365,
+        -2.400758277161838,
+        -2.549732539343734,
+        4.374664141464968,
+        2.938163982698783
+      ];
+      const d = [
+        0.007784695709041462,
+        0.3224671290700398,
+        2.445134137142996,
+        3.754408661907416
+      ];
+      const plow = 0.02425;
+      const phigh = 1 - plow;
+      let q;
+      let r;
+
+      if (p < plow) {
+        q = Math.sqrt(-2 * Math.log(p));
+        return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5])
+          / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+      }
+      if (p > phigh) {
+        q = Math.sqrt(-2 * Math.log(1 - p));
+        return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5])
+          / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+      }
+      q = p - 0.5;
+      r = q * q;
+      return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q
+        / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+    }
+
+    function parseNumberList(text, fieldName) {
+      const raw = String(text).trim();
+      if (!raw) return [];
+      const values = raw
+        .split(/[\s,，;；、]+/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .map(Number);
+      if (values.some((value) => !Number.isFinite(value) || value < 0)) {
+        throw new Error(`${fieldName}只能包含非负数字`);
+      }
+      return values;
+    }
+
+    function mean(values) {
+      if (!values.length) return null;
+      return values.reduce((sum, value) => sum + value, 0) / values.length;
+    }
+
+    function sampleVariance(values) {
+      if (values.length < 2) return null;
+      const avg = mean(values);
+      return values.reduce((sum, value) => sum + (value - avg) ** 2, 0) / (values.length - 1);
+    }
+
+    function readOptionalNumber(id) {
+      const raw = document.getElementById(id).value.trim();
+      if (!raw) return null;
+      const value = Number(raw);
+      if (!Number.isFinite(value) || value < 0) throw new Error("合同规定值和频数必须为非负数字");
+      return value;
+    }
+
+    function decisionRow(title, expression, passed) {
+      const statusClass = passed === null ? "neutral" : passed ? "pass" : "fail";
+      const statusText = passed === null ? "未判定" : passed ? "接受" : "拒绝";
+      return `
+        <div class="decision">
+          <div>
+            <strong>${title}</strong>
+            <span>${expression}</span>
+          </div>
+          <div class="status ${statusClass}">${statusText}</div>
+        </div>
+      `;
+    }
+
+    function calculateMaintainability() {
+      try {
+        const corrective = parseNumberList(document.getElementById("correctiveTimes").value, "修复性维修时间");
+        const preventive = parseNumberList(document.getElementById("preventiveTimes").value, "预防性维修时间");
+        const beta = parseRatio(document.getElementById("betaMaintain").value, "订购方风险 β");
+        const percentile = parseRatio(document.getElementById("percentileMaintain").value, "最大修复时间百分位 p");
+        const fc = readOptionalNumber("fcInput") ?? 0;
+        const fp = readOptionalNumber("fpInput") ?? 0;
+        const mct = readOptionalNumber("mctInput");
+        const mpt = readOptionalNumber("mptInput");
+        const mpc = readOptionalNumber("mpcInput");
+        const mmax = readOptionalNumber("mmaxInput");
+
+        const nc = corrective.length;
+        const np = preventive.length;
+        const ctMeanValue = mean(corrective);
+        const ptMeanValue = mean(preventive);
+        const ctVarianceValue = sampleVariance(corrective);
+        const ptVarianceValue = sampleVariance(preventive);
+        const ctSd = ctVarianceValue === null ? null : Math.sqrt(ctVarianceValue);
+        const ptSd = ptVarianceValue === null ? null : Math.sqrt(ptVarianceValue);
+        const zRisk = inverseNormal(1 - beta);
+        const zPercentile = inverseNormal(percentile);
+        const zBeta = zRisk;
+
+        let pcMeanValue = null;
+        let pcMargin = null;
+        if (ctMeanValue !== null && ptMeanValue !== null && ctVarianceValue !== null && ptVarianceValue !== null && fc + fp > 0 && nc > 0 && np > 0) {
+          pcMeanValue = (fc * ctMeanValue + fp * ptMeanValue) / (fc + fp);
+          pcMargin = zRisk * Math.sqrt((np * (fc * ctSd) ** 2 + nc * (fp * ptSd) ** 2) / (np * nc * (fc + fp) ** 2));
+        }
+
+        let maxCt = null;
+        let psi = null;
+        if (nc >= 2 && corrective.every((value) => value > 0)) {
+          const logs = corrective.map(Math.log);
+          const logMean = mean(logs);
+          const logVariance = sampleVariance(logs);
+          psi = zPercentile - zBeta * Math.sqrt(1 / nc + (zPercentile ** 2) / (2 * (nc - 1)));
+          maxCt = Math.exp(logMean + psi * Math.sqrt(logVariance));
+        }
+
+        document.getElementById("maintainRiskName").textContent = `β = ${formatPercent(beta, 4)}`;
+        document.getElementById("maintainCounts").textContent = `${nc} / ${np}`;
+        document.getElementById("ctMean").textContent = formatNumber(ctMeanValue);
+        document.getElementById("ctVariance").textContent = formatNumber(ctVarianceValue);
+        document.getElementById("ptMean").textContent = formatNumber(ptMeanValue);
+        document.getElementById("ptVariance").textContent = formatNumber(ptVarianceValue);
+        document.getElementById("pcMean").textContent = formatNumber(pcMeanValue);
+        document.getElementById("maxCtEstimate").textContent = formatNumber(maxCt);
+        document.getElementById("maintainZ").innerHTML = `<span class="math-var">Z<sub>1-β</sub></span> = <span class="math-var">Z<sub>β</sub></span> = ${formatNumber(zRisk)}`;
+        document.getElementById("maintainZp").innerHTML = `<span class="math-var">Z<sub>p</sub></span> = ${formatNumber(zPercentile)}`;
+        document.getElementById("maintainPsi").textContent = formatNumber(psi);
+
+        const warnings = [];
+        if (nc > 0 && nc < 30) warnings.push(`修复性维修样本量 nc=${nc}，小于方法9建议的最小样本量30。`);
+        if (np > 0 && np < 30) warnings.push(`预防性维修样本量 np=${np}，小于方法9建议的附加样本量30。`);
+        if (corrective.some((value) => value <= 0)) warnings.push("最大修复时间检验按对数正态分布计算，修复性维修时间应全部大于0。");
+        document.getElementById("maintainWarning").textContent = warnings.length ? warnings.join(" ") : "样本量检查通过：当前输入满足方法9的样本量提示要求。";
+
+        const decisions = [];
+        if (ctMeanValue !== null && ctSd !== null && nc > 0 && mct !== null) {
+          const limit = mct - zRisk * ctSd / Math.sqrt(nc);
+          decisions.push(decisionRow("平均修复时间", `A52：<span class="math-var">X̄<sub>ct</sub></span>=${formatNumber(ctMeanValue)} ≤ <span class="math-var">M<sub>ct</sub></span> - <span class="math-var">Z<sub>1-β</sub></span>·<span class="math-var">d<sub>ct</sub></span>/√<span class="math-var">n<sub>c</sub></span> = ${formatNumber(limit)}`, ctMeanValue <= limit));
+        } else {
+          decisions.push(decisionRow("平均修复时间", "缺少修复性维修数据、方差或 <span class=\"math-var\">M<sub>ct</sub></span>，未进行判定。", null));
+        }
+
+        if (ptMeanValue !== null && ptSd !== null && np > 0 && mpt !== null) {
+          const limit = mpt - zRisk * ptSd / Math.sqrt(np);
+          decisions.push(decisionRow("平均预防性维修时间", `A53：<span class="math-var">X̄<sub>pt</sub></span>=${formatNumber(ptMeanValue)} ≤ <span class="math-var">M<sub>pt</sub></span> - <span class="math-var">Z<sub>1-β</sub></span>·<span class="math-var">d<sub>pt</sub></span>/√<span class="math-var">n<sub>p</sub></span> = ${formatNumber(limit)}`, ptMeanValue <= limit));
+        } else {
+          decisions.push(decisionRow("平均预防性维修时间", "缺少预防性维修数据、方差或 <span class=\"math-var\">M<sub>pt</sub></span>，未进行判定。", null));
+        }
+
+        if (pcMeanValue !== null && pcMargin !== null && mpc !== null) {
+          const limit = mpc - pcMargin;
+          decisions.push(decisionRow("平均维修时间", `A54：<span class="math-var">X̄<sub>p/c</sub></span>=${formatNumber(pcMeanValue)} ≤ <span class="math-var">M<sub>p/c</sub></span> - 风险裕量 = ${formatNumber(limit)}`, pcMeanValue <= limit));
+        } else {
+          decisions.push(decisionRow("平均维修时间", "需同时输入修复性、预防性维修数据以及 <span class=\"math-var\">f<sub>c</sub></span>、<span class=\"math-var\">f<sub>p</sub></span>、<span class=\"math-var\">M<sub>p/c</sub></span> 后判定。", null));
+        }
+
+        if (maxCt !== null && mmax !== null) {
+          decisions.push(decisionRow("最大修复时间", `A55：<span class="math-var">X<sub>maxct</sub></span>=${formatNumber(maxCt)} ≤ <span class="math-var">M<sub>maxct</sub></span>=${formatNumber(mmax)}`, maxCt <= mmax));
+        } else {
+          decisions.push(decisionRow("最大修复时间", "需输入全部大于0的修复性维修时间和 <span class=\"math-var\">M<sub>maxct</sub></span> 后判定。", null));
+        }
+
+        document.getElementById("maintainDecisions").innerHTML = decisions.join("");
+      } catch (error) {
+        document.getElementById("maintainWarning").textContent = error.message;
+      }
+    }
+
+    function acceptablePlanProbability(n, r, q1) {
+      if (r >= n) return 1;
+      const failureProbability = 1 - q1;
+      const upper = Math.min(r, n);
+      const logs = [];
+      for (let d = 0; d <= upper; d += 1) {
+        logs.push(logBinomialPmf(n, d, failureProbability));
+      }
+      return probabilityFromLogs(logs);
+    }
+
+    function minimumSampleSize(q1, beta, r, maxN) {
+      const start = Math.max(1, r + 1);
+      for (let n = start; n <= maxN; n += 1) {
+        if (acceptablePlanProbability(n, r, q1) <= beta) {
+          return n;
+        }
+      }
+      return null;
+    }
+
+    function showSchemeError(text) {
+      document.getElementById("schemeN").textContent = "--";
+      document.getElementById("schemeMessage").textContent = text;
+    }
+
+    function renderSchemeTable(beta) {
+      const qValues = [];
+      for (let i = 85; i <= 99; i += 1) {
+        qValues.push(i / 100);
+      }
+
+      const header = [
+        "<thead>",
+        "<tr>",
+        "<th>r</th>",
+        ...qValues.map((q) => `<th>${q.toFixed(2)}</th>`),
+        "</tr>",
+        "</thead>"
+      ].join("");
+
+      const rows = [];
+      for (let r = 0; r <= 20; r += 1) {
+        const cells = qValues.map((q) => {
+          const n = minimumSampleSize(q, beta, r, 50000);
+          return `<td>${n === null ? ">" : ""}${n ?? 50000}</td>`;
+        });
+        rows.push(`<tr><td>${r}</td>${cells.join("")}</tr>`);
+      }
+
+      document.getElementById("schemeTable").innerHTML = `${header}<tbody>${rows.join("")}</tbody>`;
+    }
+
+    function calculateScheme() {
+      try {
+        const q1 = parseRatio(document.getElementById("q1Input").value, "最低可接受值 q1");
+        const beta = parseRatio(document.getElementById("betaInput").value, "订购方风险 β");
+        const r = Number(document.getElementById("rInput").value);
+        const maxN = Number(document.getElementById("maxSearchN").value);
+        const digits = 4;
+
+        if (!Number.isInteger(r) || r < 0) throw new Error("合格判定数 r 必须为非负整数");
+        if (!Number.isInteger(maxN) || maxN <= r) throw new Error("最大搜索样本量必须为大于 r 的正整数");
+
+        const n = minimumSampleSize(q1, beta, r, maxN);
+        document.getElementById("schemeQ1").textContent = formatPercent(q1, digits);
+        document.getElementById("schemeBeta").textContent = formatPercent(beta, digits);
+        document.getElementById("schemeBetaName").textContent = `β = ${formatPercent(beta, digits)}`;
+        document.getElementById("schemeR").textContent = String(r);
+        renderSchemeTable(beta);
+
+        if (n === null) {
+          document.getElementById("schemeN").textContent = "--";
+          document.getElementById("schemeMessage").textContent = `在最大搜索样本量 ${maxN} 内未找到满足公式的试验方案，请增大最大搜索样本量。`;
+          return;
+        }
+
+        const probability = acceptablePlanProbability(n, r, q1);
+        document.getElementById("schemeN").textContent = String(n);
+        document.getElementById("schemeMessage").innerHTML =
+          `当 <span class="math-var">q<sub>1</sub></span> = ${formatPercent(q1, digits)}、β = ${formatPercent(beta, digits)}、r = ${r} 时，满足公式的最小样本量为 ${n}，此时左侧概率为 ${formatPercent(probability, digits)}。`;
+      } catch (error) {
+        showSchemeError(error.message);
+      }
+    }
+
+    function showError(text) {
+      document.getElementById("lowerBound").textContent = "--";
+      document.getElementById("conclusion").className = "badge fail";
+      document.getElementById("conclusion").textContent = "ERROR";
+      document.getElementById("message").textContent = text;
+    }
+
+    function calculate() {
+      try {
+        const metric = document.getElementById("metric").value;
+        const n = Number(document.getElementById("sampleSize").value);
+        const f = Number(document.getElementById("failures").value);
+        const confidence = parseRatio(document.getElementById("confidence").value, "置信度 C");
+        const target = parseRatio(document.getElementById("target").value, "最低可接受值", true);
+        const digits = Number(document.getElementById("digits").value);
+
+        if (!Number.isInteger(n) || n <= 0) throw new Error("样本量 n 必须为正整数");
+        if (!Number.isInteger(f) || f < 0 || f > n) throw new Error("失败数 F 必须为 0 到 n 之间的整数");
+
+        const successes = n - f;
+        const point = successes / n;
+        const lower = lowerBound(n, f, confidence);
+
+        document.getElementById("metricName").textContent = metric;
+        document.getElementById("lowerBound").textContent = formatPercent(lower, digits);
+        document.getElementById("pointEstimate").textContent = formatPercent(point, digits);
+        document.getElementById("successes").textContent = String(successes);
+        document.getElementById("failureCount").textContent = String(f);
+        document.getElementById("confidenceOut").textContent = formatPercent(confidence, digits);
+
+        const badge = document.getElementById("conclusion");
+        const message = document.getElementById("message");
+        if (target === null) {
+          badge.className = "badge neutral";
+          badge.textContent = "CALC";
+          message.textContent = `当前 ${metric} 点估计为 ${formatPercent(point, digits)}，单侧置信下限为 ${formatPercent(lower, digits)}。`;
+        } else if (lower >= target) {
+          badge.className = "badge pass";
+          badge.textContent = "PASS";
+          message.textContent = `当前 ${metric} 单侧置信下限为 ${formatPercent(lower, digits)}，不低于最低可接受值 ${formatPercent(target, digits)}，判定为通过。`;
+        } else {
+          badge.className = "badge fail";
+          badge.textContent = "FAIL";
+          message.textContent = `当前 ${metric} 单侧置信下限为 ${formatPercent(lower, digits)}，低于最低可接受值 ${formatPercent(target, digits)}，判定为不通过。`;
+        }
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      calculate();
+    });
+
+    resetBtn.addEventListener("click", () => {
+      document.getElementById("metric").value = "FDR";
+      document.getElementById("confidence").value = "80%";
+      document.getElementById("sampleSize").value = "65";
+      document.getElementById("failures").value = "2";
+      document.getElementById("target").value = "90%";
+      document.getElementById("digits").value = "4";
+      calculate();
+    });
+
+    schemeForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      calculateScheme();
+    });
+
+    schemeResetBtn.addEventListener("click", () => {
+      document.getElementById("q1Input").value = "90%";
+      document.getElementById("betaInput").value = "10%";
+      document.getElementById("rInput").value = "0";
+      document.getElementById("maxSearchN").value = "10000";
+      calculateScheme();
+    });
+
+    maintainForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      calculateMaintainability();
+    });
+
+    maintainResetBtn.addEventListener("click", () => {
+      document.getElementById("betaMaintain").value = "10%";
+      document.getElementById("percentileMaintain").value = "95%";
+      document.getElementById("fcInput").value = "1";
+      document.getElementById("fpInput").value = "1";
+      document.getElementById("mctInput").value = "30";
+      document.getElementById("mptInput").value = "25";
+      document.getElementById("mpcInput").value = "28";
+      document.getElementById("mmaxInput").value = "55";
+      calculateMaintainability();
+    });
+
+    loadMaintainSample.addEventListener("click", () => {
+      document.getElementById("correctiveTimes").value = [
+        18, 22, 16, 25, 20, 19, 24, 21, 17, 23,
+        26, 18, 20, 22, 19, 21, 24, 23, 18, 20,
+        22, 25, 17, 19, 21, 23, 24, 20, 18, 22
+      ].join(", ");
+      document.getElementById("preventiveTimes").value = [
+        12, 14, 11, 15, 13, 12, 16, 14, 13, 15,
+        12, 11, 14, 13, 16, 15, 12, 14, 13, 11,
+        15, 12, 14, 13, 16, 15, 11, 12, 14, 13
+      ].join(", ");
+      calculateMaintainability();
+    });
+
+    clearMaintainData.addEventListener("click", () => {
+      document.getElementById("correctiveTimes").value = "";
+      document.getElementById("preventiveTimes").value = "";
+      calculateMaintainability();
+    });
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const pageId = button.dataset.page;
+        tabButtons.forEach((item) => item.classList.toggle("active", item === button));
+        document.querySelectorAll(".page").forEach((page) => {
+          page.classList.toggle("active", page.id === pageId);
+        });
+      });
+    });
+
+    calculate();
+    calculateScheme();
+    loadMaintainSample.click();
+  </script>
+</body>
+</html>
