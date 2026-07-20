@@ -1075,6 +1075,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5 19 10 10 19l-4 1 1-4 9-10.5Z"/><path d="M12.5 7.5 16.5 11.5"/></svg>
         <span>GJB 2072 方法9</span>
       </button>
+      <button class="tab-button" type="button" data-page="chiPage">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M3 20c2 0 3-9 6-12s5-1 9 1"/></svg>
+        <span>卡方分布</span>
+      </button>
     </nav>
 
     <section class="page active" id="lowerPage">
@@ -1577,6 +1581,121 @@
             <div class="footer">
               判决规则按截图 A52-A55：样本统计量不大于合同规定值扣除风险裕量后的判决限，则接受；否则拒绝。最大修复时间按对数正态分布估计，A55 取 p 分位数上(1-β)置信限（保守估计）。
             </div>
+          </div>
+        </section>
+      </section>
+    </section>
+
+    <section class="page" id="chiPage">
+      <section class="main">
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">卡方分布计算</h2>
+            <div class="panel-note">指数寿命型可靠性验证 · 正态方差置信区间 · χ² 分位数</div>
+          </div>
+          <form class="form" id="chiForm">
+            <div class="field-grid">
+              <div>
+                <label for="chiMode">计算模式</label>
+                <select id="chiMode">
+                  <option value="mtbf">寿命型 MTBF 置信下限（指数分布 χ² 法）</option>
+                  <option value="variance">正态方差 σ² 置信区间（χ² 法）</option>
+                  <option value="quantile">χ² 分位数 / 临界值查询</option>
+                </select>
+              </div>
+              <div>
+                <label for="chiDigits">结果小数位</label>
+                <select id="chiDigits">
+                  <option value="2">2 位</option>
+                  <option value="3">3 位</option>
+                  <option value="4" selected>4 位</option>
+                  <option value="5">5 位</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="chiMtbfGroup">
+              <div class="field-grid">
+                <div>
+                  <label for="chiT">总试验时间 T</label>
+                  <input id="chiT" type="number" min="0" step="any" value="1000">
+                  <div class="hint">多台累计时间（台·h），与 MTBF 同单位</div>
+                </div>
+                <div>
+                  <label for="chir">失效数 r（整数 ≥ 0）</label>
+                  <input id="chir" type="number" min="0" step="1" value="0">
+                </div>
+              </div>
+              <div class="field-grid">
+                <div>
+                  <label for="chiConf">置信度 C</label>
+                  <input id="chiConf" type="text" value="80%" inputmode="decimal" autocomplete="off">
+                </div>
+                <div>
+                  <label for="chiTmission">任务时间 t（可选）</label>
+                  <input id="chiTmission" type="number" min="0" step="any" value="100">
+                  <div class="hint">填写则同时给出可靠度下限 R<sub>L</sub>(t)</div>
+                </div>
+              </div>
+            </div>
+
+            <div id="chiVarGroup" hidden>
+              <div class="field-grid">
+                <div>
+                  <label for="chiN">样本量 n</label>
+                  <input id="chiN" type="number" min="2" step="1" value="20">
+                </div>
+                <div>
+                  <label for="chiS">样本标准差 s</label>
+                  <input id="chiS" type="number" min="0" step="any" value="2.5">
+                </div>
+              </div>
+              <div class="field-grid">
+                <div>
+                  <label for="chiVarConf">置信度 C</label>
+                  <input id="chiVarConf" type="text" value="90%" inputmode="decimal" autocomplete="off">
+                  <div class="hint">用于 σ² 的双侧置信区间</div>
+                </div>
+                <div></div>
+              </div>
+            </div>
+
+            <div id="chiQuantGroup" hidden>
+              <div class="field-grid">
+                <div>
+                  <label for="chiK">自由度 k</label>
+                  <input id="chiK" type="number" min="1" step="1" value="10">
+                </div>
+                <div>
+                  <label for="chiP">累积概率 p（CDF）</label>
+                  <input id="chiP" type="text" value="0.95" inputmode="decimal" autocomplete="off">
+                  <div class="hint">上侧 α 对应 p = 1 − α（如 α=0.05 → p=0.95）</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="primary" type="submit">计算</button>
+              <button class="secondary" type="button" id="chiResetBtn">恢复示例</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">计算结果</h2>
+            <div class="panel-note" id="chiModeName">寿命型 MTBF 置信下限（指数分布 χ² 法）</div>
+          </div>
+          <div class="result-card">
+            <div class="hero-result">
+              <div>
+                <div class="result-label" id="chiHeroLabel">MTBF 置信下限 θ<sub>L</sub></div>
+                <div class="result-value" id="chiHero">—</div>
+              </div>
+              <div class="badge neutral" id="chiBadge">CALC</div>
+            </div>
+            <div class="metrics" id="chiMetrics"></div>
+            <div class="warning" id="chiWarn" hidden></div>
           </div>
         </section>
       </section>
@@ -2351,6 +2470,197 @@
       calculateMaintainability();
     });
 
+    // ---- 卡方分布 (chi-square) ----
+    function regularizedLowerGamma(a, x) {
+      if (x < 0 || a <= 0) return NaN;
+      if (x === 0) return 0;
+      if (x < a + 1) {
+        let sum = 1 / a, term = 1 / a;
+        for (let n = 1; n < 400; n += 1) {
+          term *= x / (a + n);
+          sum += term;
+          if (Math.abs(term) < Math.abs(sum) * 1e-16) break;
+        }
+        return sum * Math.exp(-x + a * Math.log(x) - logGamma(a));
+      }
+      let b = x + 1 - a;
+      let c = 1 / 1e-30, d = 1 / b, h = d;
+      for (let i = 1; i < 400; i += 1) {
+        const an = -i * (i - a);
+        b += 2;
+        d = an * d + b;
+        if (Math.abs(d) < 1e-30) d = 1e-30;
+        c = b + an / c;
+        if (Math.abs(c) < 1e-30) c = 1e-30;
+        d = 1 / d;
+        const del = d * c;
+        h *= del;
+        if (Math.abs(del - 1) < 1e-16) break;
+      }
+      const q = Math.exp(-x + a * Math.log(x) - logGamma(a)) * h;
+      return 1 - q;
+    }
+
+    function chiSquareCdf(x, k) {
+      if (k <= 0) return NaN;
+      if (x <= 0) return 0;
+      return regularizedLowerGamma(k / 2, x / 2);
+    }
+
+    function chiSquareQuantile(p, k) {
+      if (!(p > 0 && p < 1)) return p <= 0 ? 0 : Infinity;
+      if (k <= 0) return NaN;
+      const z = inverseNormal(p);
+      let guess = k * Math.pow(1 - 2 / (9 * k) + z * Math.sqrt(2 / (9 * k)), 3);
+      if (!isFinite(guess) || guess <= 0) guess = k;
+      let lo = Math.max(0, guess * 0.5), hi = guess * 2;
+      if (chiSquareCdf(lo, k) > p) { hi = lo; lo = 0; }
+      let guard = 0;
+      while (chiSquareCdf(hi, k) < p && guard < 60) { hi *= 2; guard += 1; }
+      for (let i = 0; i < 200; i += 1) {
+        const mid = (lo + hi) / 2;
+        if (chiSquareCdf(mid, k) < p) lo = mid; else hi = mid;
+      }
+      return (lo + hi) / 2;
+    }
+
+    const chiForm = document.getElementById("chiForm");
+    const chiModeSel = document.getElementById("chiMode");
+
+    function chiShowGroups() {
+      const mode = chiModeSel.value;
+      document.getElementById("chiMtbfGroup").hidden = mode !== "mtbf";
+      document.getElementById("chiVarGroup").hidden = mode !== "variance";
+      document.getElementById("chiQuantGroup").hidden = mode !== "quantile";
+      const names = {
+        mtbf: "寿命型 MTBF 置信下限（指数分布 χ² 法）",
+        variance: "正态方差 σ² 置信区间（χ² 法）",
+        quantile: "χ² 分位数 / 临界值查询"
+      };
+      document.getElementById("chiModeName").textContent = names[mode];
+    }
+
+    function chiMetric(label, value) {
+      return `<div class="metric"><span>${label}</span><strong>${value}</strong></div>`;
+    }
+
+    function calculateChi() {
+      const hero = document.getElementById("chiHero");
+      const heroLabel = document.getElementById("chiHeroLabel");
+      const badge = document.getElementById("chiBadge");
+      const metrics = document.getElementById("chiMetrics");
+      const warn = document.getElementById("chiWarn");
+      const digits = Number(document.getElementById("chiDigits").value);
+      const num = (x) => (Number.isFinite(x) ? Number(x).toFixed(digits) : "—");
+      try {
+        const mode = chiModeSel.value;
+        warn.hidden = true;
+        if (mode === "mtbf") {
+          const T = Number(document.getElementById("chiT").value);
+          const r = Number(document.getElementById("chir").value);
+          const C = parseRatio(document.getElementById("chiConf").value, "置信度 C");
+          const tRaw = document.getElementById("chiTmission").value.trim();
+          const t = tRaw === "" ? null : Number(tRaw);
+          if (!(T > 0)) throw new Error("总试验时间 T 必须为正");
+          if (!Number.isInteger(r) || r < 0) throw new Error("失效数 r 必须为非负整数");
+          if (t !== null && !(t >= 0)) throw new Error("任务时间 t 必须非负");
+          const alpha = 1 - C;
+          const df = 2 * r + 2;
+          const chiCrit = chiSquareQuantile(1 - alpha, df);
+          const thetaL = 2 * T / chiCrit;
+          const point = r > 0 ? T / r : Infinity;
+          heroLabel.innerHTML = "MTBF 置信下限 θ<sub>L</sub>";
+          hero.textContent = num(thetaL) + " h";
+          badge.className = "badge neutral";
+          badge.textContent = "CALC";
+          let m = "";
+          m += chiMetric("总试验时间 T", num(T) + " h");
+          m += chiMetric("失效数 r", String(r));
+          m += chiMetric("自由度 df", String(df));
+          m += chiMetric("χ² 临界值 (1−α)", num(chiCrit));
+          m += chiMetric("MTBF 点估计", r > 0 ? num(point) + " h" : "—（r=0）");
+          if (t !== null) {
+            const rl = Math.exp(-t / thetaL);
+            heroLabel.innerHTML = "MTBF 下限 θ<sub>L</sub> · R<sub>L</sub>(t)";
+            m += chiMetric("可靠度下限 R<sub>L</sub>(" + num(t) + "h)", (rl * 100).toFixed(digits) + "%");
+          }
+          metrics.innerHTML = m;
+          warn.hidden = false;
+          warn.textContent = "依据：指数寿命下 2T/θ ~ χ²(2r+2)。θ 的 (1−α) 单侧下限 θ_L = 2T / χ²_{2r+2, 1−α}（GJB 899A / MIL-HDBK-781 方法）。";
+        } else if (mode === "variance") {
+          const n = Number(document.getElementById("chiN").value);
+          const s = Number(document.getElementById("chiS").value);
+          const C = parseRatio(document.getElementById("chiVarConf").value, "置信度 C");
+          if (!Number.isInteger(n) || n < 2) throw new Error("样本量 n 必须为 ≥ 2 的整数");
+          if (!(s >= 0)) throw new Error("样本标准差 s 必须非负");
+          const alpha = 1 - C;
+          const df = n - 1;
+          const chiU = chiSquareQuantile(1 - alpha / 2, df);
+          const chiL = chiSquareQuantile(alpha / 2, df);
+          const varL = (df * s * s) / chiU;
+          const varU = (df * s * s) / chiL;
+          const sL = Math.sqrt(varL), sU = Math.sqrt(varU);
+          heroLabel.innerHTML = "方差下限 σ²<sub>L</sub>";
+          hero.textContent = num(varL);
+          badge.className = "badge neutral";
+          badge.textContent = "CALC";
+          let m = "";
+          m += chiMetric("样本量 n", String(n));
+          m += chiMetric("自由度 df", String(df));
+          m += chiMetric("χ² 上界(1−α/2)", num(chiU));
+          m += chiMetric("χ² 下界(α/2)", num(chiL));
+          m += chiMetric("方差区间 σ²", `[${num(varL)}, ${num(varU)}]`);
+          m += chiMetric("标准差区间 σ", `[${num(sL)}, ${num(sU)}]`);
+          metrics.innerHTML = m;
+          warn.hidden = false;
+          warn.textContent = "依据：(n−1)s²/σ² ~ χ²(n−1)。σ² 的 (1−α) 双侧置信区间为 [(n−1)s²/χ²_{1−α/2}, (n−1)s²/χ²_{α/2}]。";
+        } else {
+          const k = Number(document.getElementById("chiK").value);
+          const p = parseRatio(document.getElementById("chiP").value, "累积概率 p");
+          if (!Number.isInteger(k) || k < 1) throw new Error("自由度 k 必须为正整数");
+          const q = chiSquareQuantile(p, k);
+          heroLabel.innerHTML = "χ² 分位数 χ²<sub>" + k + ", " + p + "</sub>";
+          hero.textContent = num(q);
+          badge.className = "badge neutral";
+          badge.textContent = "CALC";
+          let m = "";
+          m += chiMetric("自由度 k", String(k));
+          m += chiMetric("累积概率 p", String(p));
+          m += chiMetric("上侧概率 α", num(1 - p));
+          m += chiMetric("CDF 回算校验", chiSquareCdf(q, k).toFixed(digits));
+          metrics.innerHTML = m;
+          warn.hidden = false;
+          warn.textContent = "χ² 分位数由 CDF 二分反解得到；回算 CDF 应等于 p（用于校验）。";
+        }
+      } catch (error) {
+        hero.textContent = "—";
+        heroLabel.textContent = "计算出错";
+        metrics.innerHTML = "";
+        badge.className = "badge fail";
+        badge.textContent = "ERROR";
+        warn.hidden = false;
+        warn.textContent = "错误：" + error.message;
+      }
+    }
+
+    chiModeSel.addEventListener("change", () => { chiShowGroups(); calculateChi(); });
+    chiForm.addEventListener("submit", (event) => { event.preventDefault(); calculateChi(); });
+    document.getElementById("chiResetBtn").addEventListener("click", () => {
+      chiModeSel.value = "mtbf";
+      document.getElementById("chiT").value = "1000";
+      document.getElementById("chir").value = "0";
+      document.getElementById("chiConf").value = "80%";
+      document.getElementById("chiTmission").value = "100";
+      document.getElementById("chiN").value = "20";
+      document.getElementById("chiS").value = "2.5";
+      document.getElementById("chiVarConf").value = "90%";
+      document.getElementById("chiK").value = "10";
+      document.getElementById("chiP").value = "0.95";
+      document.getElementById("chiDigits").value = "4";
+      chiShowGroups();
+      calculateChi();
+    });
+
     tabButtons.forEach((button) => {
       button.addEventListener("click", () => {
         const pageId = button.dataset.page;
@@ -2364,6 +2674,8 @@
     calculate();
     calculateScheme();
     loadMaintainSample.click();
+    chiShowGroups();
+    calculateChi();
   </script>
 </body>
 </html>
