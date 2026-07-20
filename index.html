@@ -22,6 +22,14 @@
       --shadow: 0 24px 60px rgba(23, 32, 51, 0.16);
       --shadow-soft: 0 10px 24px rgba(23, 32, 51, 0.1);
       --shadow-lift: 0 18px 36px rgba(15, 35, 60, 0.14);
+      --radius: 16px;
+      --radius-sm: 11px;
+      --accent: #0f766e;
+      --accent-strong: #0b6d66;
+      --accent-soft: #e6f5f3;
+      --ink-soft: #475467;
+      --hairline: rgba(15, 35, 60, 0.08);
+      --num-font: "SF Mono", "JetBrains Mono", "Roboto Mono", "Cascadia Code", Consolas, "Microsoft YaHei", monospace;
     }
 
     * {
@@ -32,7 +40,8 @@
       margin: 0;
       min-height: 100vh;
       color: var(--ink);
-      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      font-variant-numeric: tabular-nums;
       background:
         radial-gradient(circle at 18% 18%, rgba(98, 178, 211, 0.28) 0, rgba(98, 178, 211, 0) 28%),
         radial-gradient(circle at 82% 32%, rgba(15, 118, 110, 0.2) 0, rgba(15, 118, 110, 0) 25%),
@@ -590,6 +599,12 @@
       z-index: 3;
     }
 
+    .scheme-table tr.scan-selected td {
+      background: #e8f3ff;
+      font-weight: 900;
+      color: #0b61c4;
+    }
+
     .table-toolbar {
       display: flex;
       align-items: center;
@@ -809,25 +824,257 @@
         width: 100%;
       }
     }
+      /* ===== 高级感增强：图标 / 微交互 / 可视化 / 暗色主题 ===== */
+    body,
+    .main,
+    .nav-tabs,
+    .tab-button,
+    .panel {
+      transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+
+    .nav-tabs {
+      position: sticky;
+      top: 12px;
+      z-index: 6;
+    }
+
+    .tab-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-button svg {
+      width: 17px;
+      height: 17px;
+      flex: 0 0 auto;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0.95); opacity: 0.45; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .result-value {
+      animation: pop 0.35s ease;
+    }
+
+    .badge {
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .badge.pass {
+      box-shadow: 0 8px 18px rgba(6, 118, 71, 0.18);
+    }
+
+    .badge.fail {
+      box-shadow: 0 8px 18px rgba(180, 35, 24, 0.18);
+    }
+
+    .org-slot {
+      margin: 6px 0 0;
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.62);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .theme-toggle {
+      width: 42px;
+      height: 38px;
+      padding: 0;
+      border-radius: var(--radius-sm);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: none;
+    }
+
+    .theme-toggle svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .theme-toggle .icon-moon {
+      display: none;
+    }
+
+    [data-theme="dark"] .theme-toggle .icon-sun {
+      display: none;
+    }
+
+    [data-theme="dark"] .theme-toggle .icon-moon {
+      display: block;
+    }
+
+    .ci-bar {
+      margin: 2px 0 18px;
+    }
+
+    .ci-bar svg {
+      width: 100%;
+      height: 70px;
+      display: block;
+    }
+
+    .ci-band {
+      fill: rgba(15, 118, 110, 0.16);
+      stroke: rgba(15, 118, 110, 0.55);
+      stroke-width: 1;
+    }
+
+    .ci-point {
+      fill: var(--accent-strong);
+    }
+
+    .ci-target {
+      stroke: var(--gold);
+      stroke-width: 2;
+    }
+
+    .ci-tick {
+      stroke: var(--line);
+      stroke-width: 1;
+    }
+
+    .ci-label {
+      font-size: 10px;
+      fill: var(--muted);
+      font-family: var(--num-font);
+    }
+
+    .export-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 4px 0 12px;
+      flex-wrap: wrap;
+    }
+
+    .export-label {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .norm-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+
+    .norm-chip.pass {
+      color: var(--green);
+      background: var(--green-soft);
+      border: 1px solid #abefc6;
+    }
+
+    .norm-chip.fail {
+      color: var(--red);
+      background: var(--red-soft);
+      border: 1px solid #fecdca;
+    }
+
+    .norm-chip[hidden] {
+      display: none;
+    }
+
+    .scan-selected td {
+      background: rgba(15, 118, 110, 0.12) !important;
+      font-weight: 800;
+    }
+
+    /* ===== 暗色主题（浅卡片 + 深底，仪表盘风格） ===== */
+    [data-theme="dark"] body {
+      background:
+        radial-gradient(circle at 18% 12%, rgba(56, 189, 248, 0.1) 0, rgba(56, 189, 248, 0) 30%),
+        radial-gradient(circle at 82% 20%, rgba(15, 118, 110, 0.18) 0, rgba(15, 118, 110, 0) 28%),
+        linear-gradient(180deg, #0b1320 0%, #0f1b2e 42%, #0b111c 100%);
+    }
+
+    [data-theme="dark"] body::before {
+      opacity: 0.4;
+    }
+
+    [data-theme="dark"] .main {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 26px 70px rgba(0, 0, 0, 0.5), 0 9px 18px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="dark"] .nav-tabs {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    [data-theme="dark"] .tab-button {
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    [data-theme="dark"] .tab-button.active {
+      color: var(--accent-strong);
+      background: #fff;
+    }
   </style>
 </head>
 <body>
   <main class="shell">
     <header class="topbar">
       <div class="brand">
-        <div class="mark">GJB</div>
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="26" height="26" fill="none">
+            <rect x="6" y="6" width="36" height="36" rx="9" stroke="rgba(255,255,255,0.85)" stroke-width="2.4"/>
+            <path d="M16 24.5l6 6 11-13" stroke="rgba(255,255,255,0.95)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
         <div>
           <h1>GJB 8895 单侧置信下限计算器</h1>
           <p class="subtitle">适用于 FDR、FIR、S-FDR、S-FIR 等成败型测试性指标评估</p>
+          <p class="org-slot">检测实验室 · 通用质量特性（六性）核算工具</p>
         </div>
       </div>
-      <div class="standard-chip">二项分布 · 单侧置信下限</div>
+      <div class="topbar-actions">
+        <div class="standard-chip">二项分布 · 单侧置信下限</div>
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换明暗主题" title="切换明暗主题">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="4.2"/>
+            <path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/>
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 14.5A8 8 0 0 1 9.5 4 7 7 0 1 0 20 14.5Z"/>
+          </svg>
+        </button>
+      </div>
     </header>
 
     <nav class="nav-tabs" aria-label="功能切换">
-      <button class="tab-button active" type="button" data-page="lowerPage">单侧置信下限</button>
-      <button class="tab-button" type="button" data-page="schemePage">最低可接受值试验方案</button>
-      <button class="tab-button" type="button" data-page="maintainPage">GJB 2072 方法9</button>
+      <button class="tab-button active" type="button" data-page="lowerPage">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 16l3.5-4.5L15 14l4-6"/></svg>
+        <span>单侧置信下限</span>
+      </button>
+      <button class="tab-button" type="button" data-page="schemePage">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6M9 12h6M9 15h3"/></svg>
+        <span>最低可接受值试验方案</span>
+      </button>
+      <button class="tab-button" type="button" data-page="maintainPage">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5 19 10 10 19l-4 1 1-4 9-10.5Z"/><path d="M12.5 7.5 16.5 11.5"/></svg>
+        <span>GJB 2072 方法9</span>
+      </button>
     </nav>
 
     <section class="page active" id="lowerPage">
@@ -885,8 +1132,28 @@
             </div>
           </div>
 
-          <div class="actions">
-            <button class="primary" type="submit">计算置信下限</button>
+            <div class="field-grid">
+              <div>
+                <label for="method">计算方法</label>
+                <select id="method">
+                  <option value="exact">精确法 (Clopper-Pearson)</option>
+                  <option value="wilson">Wilson 近似区间</option>
+                </select>
+                <div class="hint">精确法为保守标准方法；Wilson 为常用近似，小样本更平滑</div>
+              </div>
+              <div>
+                <label for="intervalType">区间类型</label>
+                <select id="intervalType">
+                  <option value="lower">单侧下限</option>
+                  <option value="upper">单侧上限</option>
+                  <option value="two">双侧区间</option>
+                </select>
+                <div class="hint">默认单侧下限，与合格判定一致</div>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="primary" type="submit">计算置信下限</button>
             <button class="secondary" type="button" id="resetBtn">恢复示例</button>
           </div>
         </form>
@@ -900,10 +1167,10 @@
 
         <div class="result-card">
           <div class="hero-result">
-            <div>
-              <div class="result-label">单侧置信下限</div>
-              <div class="result-value" id="lowerBound">93.5316%</div>
-            </div>
+              <div>
+                <div class="result-label" id="lowerLabel">单侧置信下限</div>
+                <div class="result-value" id="lowerBound">93.5316%</div>
+              </div>
             <div class="badge pass" id="conclusion">PASS</div>
           </div>
 
@@ -926,8 +1193,10 @@
             </div>
           </div>
 
-          <div class="formula">
-            <math display="block" aria-label="GJB 8895 single-sided confidence lower bound equation">
+            <div class="ci-bar" id="ciBar" aria-label="置信区间可视化"></div>
+
+            <div class="formula">
+              <math display="block" aria-label="GJB 8895 single-sided confidence lower bound equation">
               <mrow>
                 <munderover>
                   <mo>&#x2211;</mo>
@@ -1052,19 +1321,19 @@
 
             <div class="field-grid">
               <div>
-                <label for="rInput">合格判定数 r</label>
-                <input id="rInput" type="number" min="0" step="1" value="0">
-                <div class="hint">失败样本次数不大于 r 时，判为合格</div>
+                <label for="mInput">故障模式库数量 <span class="math-var">M</span></label>
+                <input id="mInput" type="number" min="0" step="1" value="30">
+                <div class="hint">合格判定数 r 从 0 自增，取第一个使最小样本量 &gt; M 的方案</div>
               </div>
               <div>
-                <label for="maxSearchN">最大搜索样本量</label>
+                <label for="maxSearchN">最大搜索样本量 <span class="math-var">N<sub>max</sub></span></label>
                 <input id="maxSearchN" type="number" min="1" step="1" value="10000">
-                <div class="hint">若未找到解，可适当增大</div>
+                <div class="hint">搜索上限，超出仍未找到解将提示无解</div>
               </div>
             </div>
 
             <div class="actions">
-              <button class="primary" type="submit">求解最小样本量</button>
+              <button class="primary" type="submit">求解试验方案</button>
               <button class="secondary" type="button" id="schemeResetBtn">恢复示例</button>
             </div>
           </form>
@@ -1080,7 +1349,15 @@
             <div class="scheme-result">
               <div class="result-emphasis">
                 <span>最小样本量 n</span>
-                <strong id="schemeN">22</strong>
+                <strong id="schemeN">--</strong>
+              </div>
+              <div class="metric">
+                <span>选定合格判定数 <span class="math-var">r*</span></span>
+                <strong id="schemeR">--</strong>
+              </div>
+              <div class="metric">
+                <span>故障模式库数量 <span class="math-var">M</span></span>
+                <strong id="schemeM">--</strong>
               </div>
               <div class="metric">
                 <span><span class="math-var">q<sub>1</sub></span></span>
@@ -1090,26 +1367,22 @@
                 <span>β</span>
                 <strong id="schemeBeta">10.0000%</strong>
               </div>
-              <div class="metric">
-                <span>合格判定数 r</span>
-                <strong id="schemeR">0</strong>
-              </div>
             </div>
 
             <div class="message" id="schemeMessage">
-              当 <span class="math-var">q<sub>1</sub></span> = 90.0000%、β = 10.0000%、r = 0 时，满足公式的最小样本量为 22。
+              请输入参数并点击「求解试验方案」。
             </div>
 
             <div class="table-toolbar">
-              <h3 class="table-title">最低可接受值试验方案表</h3>
-              <div class="panel-note">自动生成 r = 0..20，<span class="math-var">q<sub>1</sub></span> = 0.85..0.99</div>
+              <h3 class="table-title">扫描轨迹表（r 自增，直至最小样本量 &gt; M）</h3>
+              <div class="panel-note">逐行展示 r = 0, 1, 2, … 的最小样本量 <span class="math-var">n<sub>min</sub>(r)</span></div>
             </div>
             <div class="table-wrap">
               <table class="scheme-table" id="schemeTable"></table>
             </div>
 
             <div class="footer">
-              说明：试验方案选定后，即确定样本量 n 与合格判定数 r。若失败样本次数不大于 r，判为合格；否则判为不合格。
+              说明：合格判定数 <span class="math-var">r</span> 从 0 起逐次增大，取第一个使最小样本量 <span class="math-var">n<sub>min</sub>(r)</span> 大于故障模式库数量 <span class="math-var">M</span> 的方案 (<span class="math-var">r*</span>, <span class="math-var">n<sub>min</sub>(r*)</span>)。试验中失败样本次数不大于 <span class="math-var">r*</span> 判为合格。
             </div>
           </div>
         </section>
@@ -1291,10 +1564,18 @@
 
             <div class="warning" id="maintainWarning">样本量最小为 30。请输入维修时间数据后计算。</div>
 
+            <div class="norm-chip" id="normChip" hidden></div>
+
+            <div class="export-bar">
+              <span class="export-label">判决结果导出</span>
+              <button class="mini-button" type="button" id="copyMaintain">复制文本</button>
+              <button class="mini-button" type="button" id="csvMaintain">导出 CSV</button>
+            </div>
+
             <div class="decision-list" id="maintainDecisions"></div>
 
             <div class="footer">
-              判决规则按截图 A52-A55：样本统计量不大于合同规定值扣除风险裕量后的判决限，则接受；否则拒绝。最大修复时间按对数正态分布估计。
+              判决规则按截图 A52-A55：样本统计量不大于合同规定值扣除风险裕量后的判决限，则接受；否则拒绝。最大修复时间按对数正态分布估计，A55 取 p 分位数上(1-β)置信限（保守估计）。
             </div>
           </div>
         </section>
@@ -1531,6 +1812,127 @@
       `;
     }
 
+    function erf(x) {
+      const sign = x < 0 ? -1 : 1;
+      const ax = Math.abs(x);
+      const t = 1 / (1 + 0.3275911 * ax);
+      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-ax * ax);
+      return sign * y;
+    }
+
+    function normalCdf(x, mu, sigma) {
+      return 0.5 * (1 + erf((x - mu) / (sigma * Math.SQRT2)));
+    }
+
+    // t 分布分位数（Cornish-Fisher 展开），df>=30 时退化为正态
+    function studentTInverse(p, df) {
+      if (!(df > 0)) return inverseNormal(p);
+      const z = inverseNormal(p);
+      const z2 = z * z;
+      const z3 = z2 * z;
+      const z5 = z3 * z2;
+      const inv = 1 / df;
+      return z
+        + inv * (z3 + z) / 4
+        + inv * inv * (5 * z5 + 16 * z3 + 3 * z) / 96
+        + inv * inv * inv * (3 * z5 + 19 * z3 + 17 * z) / 384
+        + inv * inv * inv * inv * (79 * z5 + 776 * z3 + 320 * z) / 92160;
+    }
+
+    // 对数正态性 KS 检验：对 log 数据做正态性检验
+    function ksNormalityCheck(values) {
+      const n = values.length;
+      if (n < 3) return null;
+      const sorted = values.slice().sort((a, b) => a - b);
+      const m = mean(sorted);
+      const v = sampleVariance(sorted);
+      const sd = v === null ? 0 : Math.sqrt(v);
+      if (sd <= 0) return null;
+      let D = 0;
+      for (let i = 0; i < n; i += 1) {
+        const fit = normalCdf(sorted[i], m, sd);
+        const below = (i + 1) / n;
+        const atOrBelow = i / n;
+        D = Math.max(D, Math.abs(below - fit), Math.abs(atOrBelow - fit));
+      }
+      const lambda = (Math.sqrt(n) + 0.12 + 0.11 / Math.sqrt(n)) * D;
+      let q = 0;
+      for (let k = 1; k <= 12; k += 1) {
+        q += Math.pow(-1, k - 1) * Math.exp(-2 * k * k * lambda * lambda);
+      }
+      const pValue = Math.max(0, Math.min(1, 2 * q));
+      const critical = 1.36 / Math.sqrt(n);
+      return { D, p: pValue, critical, pass: D <= critical, n };
+    }
+
+    function exportMaintainText() {
+      const get = (id) => document.getElementById(id).textContent;
+      const decisions = document.getElementById("maintainDecisions").innerText.replace(/\n{2,}/g, "\n").trim();
+      return [
+        "GJB 2072-94 附录A 方法9 维修性判决",
+        "订购方风险 β = " + get("maintainRiskName").replace("β = ", ""),
+        "nc / np = " + get("maintainCounts"),
+        "平均修复时间 = " + get("ctMean"),
+        "平均预防性维修时间 = " + get("ptMean"),
+        "平均维修时间 = " + get("pcMean"),
+        "最大修复时间估计 = " + get("maxCtEstimate"),
+        "",
+        "判决明细：",
+        decisions
+      ].join("\n");
+    }
+
+    function flashButton(id, msg) {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      const old = btn.textContent;
+      btn.textContent = msg;
+      setTimeout(() => { btn.textContent = old; }, 1200);
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); flashButton("copyMaintain", "已复制"); }
+      catch (e) { alert("复制失败，请手动选择文本"); }
+      document.body.removeChild(ta);
+    }
+
+    function copyMaintain() {
+      const text = exportMaintainText();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => flashButton("copyMaintain", "已复制"), () => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function exportMaintainCsv() {
+      const rows = [["指标", "判定公式/说明", "结果"]];
+      document.querySelectorAll("#maintainDecisions .decision").forEach((row) => {
+        const strong = row.querySelector("strong");
+        const span = row.querySelector("span");
+        const status = row.querySelector(".status");
+        rows.push([
+          strong ? strong.textContent : "",
+          span ? span.textContent : "",
+          status ? status.textContent : ""
+        ]);
+      });
+      const csv = "﻿" + rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "维修性判决_GJB2072方法9.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
     function calculateMaintainability() {
       try {
         const corrective = parseNumberList(document.getElementById("correctiveTimes").value, "修复性维修时间");
@@ -1556,11 +1958,19 @@
         const zPercentile = inverseNormal(percentile);
         const zBeta = zRisk;
 
+        // 小样本(n<30)采用 t 分布临界值替代正态，结果更保守
+        const useTCt = nc > 0 && nc < 30;
+        const useTPt = np > 0 && np < 30;
+        const zCritCt = useTCt ? studentTInverse(1 - beta, nc - 1) : zRisk;
+        const zCritPt = useTPt ? studentTInverse(1 - beta, np - 1) : zRisk;
+        const zCritPc = (nc + np > 2 && (useTCt || useTPt)) ? studentTInverse(1 - beta, nc + np - 2) : zRisk;
+        const zCritMax = useTCt ? studentTInverse(1 - beta, nc - 1) : zBeta;
+
         let pcMeanValue = null;
         let pcMargin = null;
         if (ctMeanValue !== null && ptMeanValue !== null && ctVarianceValue !== null && ptVarianceValue !== null && fc + fp > 0 && nc > 0 && np > 0) {
           pcMeanValue = (fc * ctMeanValue + fp * ptMeanValue) / (fc + fp);
-          pcMargin = zRisk * Math.sqrt((np * (fc * ctSd) ** 2 + nc * (fp * ptSd) ** 2) / (np * nc * (fc + fp) ** 2));
+          pcMargin = zCritPc * Math.sqrt((np * (fc * ctSd) ** 2 + nc * (fp * ptSd) ** 2) / (np * nc * (fc + fp) ** 2));
         }
 
         let maxCt = null;
@@ -1569,7 +1979,9 @@
           const logs = corrective.map(Math.log);
           const logMean = mean(logs);
           const logVariance = sampleVariance(logs);
-          psi = zPercentile - zBeta * Math.sqrt(1 / nc + (zPercentile ** 2) / (2 * (nc - 1)));
+          // A55 最大修复时间：取 p 分位数的上(1-β)置信限（保守估计），符号为 +。
+          // 若写成 - 则退化为下置信限，会低估最大修复时间、导致安全性指标假合格。
+          psi = zPercentile + zCritMax * Math.sqrt(1 / nc + (zPercentile ** 2) / (2 * (nc - 1)));
           maxCt = Math.exp(logMean + psi * Math.sqrt(logVariance));
         }
 
@@ -1581,26 +1993,38 @@
         document.getElementById("ptVariance").textContent = formatNumber(ptVarianceValue);
         document.getElementById("pcMean").textContent = formatNumber(pcMeanValue);
         document.getElementById("maxCtEstimate").textContent = formatNumber(maxCt);
-        document.getElementById("maintainZ").innerHTML = `<span class="math-var">Z<sub>1-β</sub></span> = <span class="math-var">Z<sub>β</sub></span> = ${formatNumber(zRisk)}`;
+        document.getElementById("maintainZ").innerHTML = `<span class="math-var">Z<sub>1-β</sub></span> = ${formatNumber(zCritMax)}${(useTCt || useTPt) ? ' <span style="font-size:11px;color:var(--muted)">(t)</span>' : ''}`;
         document.getElementById("maintainZp").innerHTML = `<span class="math-var">Z<sub>p</sub></span> = ${formatNumber(zPercentile)}`;
         document.getElementById("maintainPsi").textContent = formatNumber(psi);
 
         const warnings = [];
         if (nc > 0 && nc < 30) warnings.push(`修复性维修样本量 nc=${nc}，小于方法9建议的最小样本量30。`);
         if (np > 0 && np < 30) warnings.push(`预防性维修样本量 np=${np}，小于方法9建议的附加样本量30。`);
+        if (useTCt || useTPt) warnings.push("样本量小于30，已采用 t 分布临界值(自由度 n-1)替代正态分布，判决限更保守。");
         if (corrective.some((value) => value <= 0)) warnings.push("最大修复时间检验按对数正态分布计算，修复性维修时间应全部大于0。");
         document.getElementById("maintainWarning").textContent = warnings.length ? warnings.join(" ") : "样本量检查通过：当前输入满足方法9的样本量提示要求。";
 
+        const normChip = document.getElementById("normChip");
+        const logsForTest = (nc >= 3 && corrective.every((value) => value > 0)) ? corrective.map(Math.log) : null;
+        const ks = logsForTest ? ksNormalityCheck(logsForTest) : null;
+        if (ks) {
+          normChip.hidden = false;
+          normChip.className = "norm-chip " + (ks.pass ? "pass" : "fail");
+          normChip.innerHTML = `对数正态性检验（KS）：D = ${formatNumber(ks.D)}，p ≈ ${formatNumber(ks.p)}，临界值 ${formatNumber(ks.critical)} → ${ks.pass ? "符合对数正态假设(α=0.05)" : "未通过，最大修复时间估计需谨慎"}`;
+        } else {
+          normChip.hidden = true;
+        }
+
         const decisions = [];
         if (ctMeanValue !== null && ctSd !== null && nc > 0 && mct !== null) {
-          const limit = mct - zRisk * ctSd / Math.sqrt(nc);
+          const limit = mct - zCritCt * ctSd / Math.sqrt(nc);
           decisions.push(decisionRow("平均修复时间", `A52：<span class="math-var">X̄<sub>ct</sub></span>=${formatNumber(ctMeanValue)} ≤ <span class="math-var">M<sub>ct</sub></span> - <span class="math-var">Z<sub>1-β</sub></span>·<span class="math-var">d<sub>ct</sub></span>/√<span class="math-var">n<sub>c</sub></span> = ${formatNumber(limit)}`, ctMeanValue <= limit));
         } else {
           decisions.push(decisionRow("平均修复时间", "缺少修复性维修数据、方差或 <span class=\"math-var\">M<sub>ct</sub></span>，未进行判定。", null));
         }
 
         if (ptMeanValue !== null && ptSd !== null && np > 0 && mpt !== null) {
-          const limit = mpt - zRisk * ptSd / Math.sqrt(np);
+          const limit = mpt - zCritPt * ptSd / Math.sqrt(np);
           decisions.push(decisionRow("平均预防性维修时间", `A53：<span class="math-var">X̄<sub>pt</sub></span>=${formatNumber(ptMeanValue)} ≤ <span class="math-var">M<sub>pt</sub></span> - <span class="math-var">Z<sub>1-β</sub></span>·<span class="math-var">d<sub>pt</sub></span>/√<span class="math-var">n<sub>p</sub></span> = ${formatNumber(limit)}`, ptMeanValue <= limit));
         } else {
           decisions.push(decisionRow("平均预防性维修时间", "缺少预防性维修数据、方差或 <span class=\"math-var\">M<sub>pt</sub></span>，未进行判定。", null));
@@ -1648,32 +2072,33 @@
 
     function showSchemeError(text) {
       document.getElementById("schemeN").textContent = "--";
+      document.getElementById("schemeR").textContent = "--";
+      document.getElementById("schemeM").textContent = "--";
       document.getElementById("schemeMessage").textContent = text;
+      document.getElementById("schemeTable").innerHTML = "<tbody><tr><td colspan=\"3\">参数错误</td></tr></tbody>";
     }
 
-    function renderSchemeTable(beta) {
-      const qValues = [];
-      for (let i = 85; i <= 99; i += 1) {
-        qValues.push(i / 100);
+    function renderScanTrace(trace, M, found) {
+      if (trace.length === 0) {
+        document.getElementById("schemeTable").innerHTML = "<tbody><tr><td colspan=\"3\">无扫描结果（请调整参数）</td></tr></tbody>";
+        return;
       }
-
       const header = [
         "<thead>",
         "<tr>",
-        "<th>r</th>",
-        ...qValues.map((q) => `<th>${q.toFixed(2)}</th>`),
+        "<th>合格判定数 r</th>",
+        "<th>最小样本量 n<sub>min</sub>(r)</th>",
+        `<th>是否 &gt; M (${M})</th>`,
         "</tr>",
         "</thead>"
       ].join("");
 
-      const rows = [];
-      for (let r = 0; r <= 20; r += 1) {
-        const cells = qValues.map((q) => {
-          const n = minimumSampleSize(q, beta, r, 50000);
-          return `<td>${n === null ? ">" : ""}${n ?? 50000}</td>`;
-        });
-        rows.push(`<tr><td>${r}</td>${cells.join("")}</tr>`);
-      }
+      const rows = trace.map((row) => {
+        const isSelected = found !== null && row.r === found.r;
+        const cls = isSelected ? " class=\"scan-selected\"" : "";
+        const mark = row.exceed ? "✓ 是" : "否";
+        return `<tr${cls}><td>${row.r}</td><td>${row.n}</td><td>${mark}</td></tr>`;
+      });
 
       document.getElementById("schemeTable").innerHTML = `${header}<tbody>${rows.join("")}</tbody>`;
     }
@@ -1682,30 +2107,48 @@
       try {
         const q1 = parseRatio(document.getElementById("q1Input").value, "最低可接受值 q1");
         const beta = parseRatio(document.getElementById("betaInput").value, "订购方风险 β");
-        const r = Number(document.getElementById("rInput").value);
+        const M = Number(document.getElementById("mInput").value);
         const maxN = Number(document.getElementById("maxSearchN").value);
         const digits = 4;
 
-        if (!Number.isInteger(r) || r < 0) throw new Error("合格判定数 r 必须为非负整数");
-        if (!Number.isInteger(maxN) || maxN <= r) throw new Error("最大搜索样本量必须为大于 r 的正整数");
+        if (!Number.isInteger(M) || M < 0) throw new Error("故障模式库数量 M 必须为非负整数");
+        if (!Number.isInteger(maxN) || maxN <= 0) throw new Error("最大搜索样本量必须为正整数");
 
-        const n = minimumSampleSize(q1, beta, r, maxN);
         document.getElementById("schemeQ1").textContent = formatPercent(q1, digits);
         document.getElementById("schemeBeta").textContent = formatPercent(beta, digits);
         document.getElementById("schemeBetaName").textContent = `β = ${formatPercent(beta, digits)}`;
-        document.getElementById("schemeR").textContent = String(r);
-        renderSchemeTable(beta);
+        document.getElementById("schemeM").textContent = String(M);
 
-        if (n === null) {
+        // r 从 0 自增，取第一个使最小样本量 n_min(r) > M 的方案
+        const trace = [];
+        let found = null;
+        for (let r = 0; ; r += 1) {
+          const nMin = minimumSampleSize(q1, beta, r, maxN);
+          if (nMin === null) break; // 该 r 在 maxN 内无解，后续 r 更大必无解
+          trace.push({ r, n: nMin, exceed: nMin > M });
+          if (nMin > M) {
+            found = { r, n: nMin };
+            break;
+          }
+        }
+
+        renderScanTrace(trace, M, found);
+
+        if (found === null) {
           document.getElementById("schemeN").textContent = "--";
-          document.getElementById("schemeMessage").textContent = `在最大搜索样本量 ${maxN} 内未找到满足公式的试验方案，请增大最大搜索样本量。`;
+          document.getElementById("schemeR").textContent = "--";
+          document.getElementById("schemeMessage").textContent =
+            `在最大搜索样本量 ${maxN} 内未找到使最小样本量大于 M = ${M} 的试验方案，请增大最大搜索样本量或调整参数。`;
           return;
         }
 
-        const probability = acceptablePlanProbability(n, r, q1);
-        document.getElementById("schemeN").textContent = String(n);
+        const probability = acceptablePlanProbability(found.n, found.r, q1);
+        document.getElementById("schemeN").textContent = String(found.n);
+        document.getElementById("schemeR").textContent = String(found.r);
         document.getElementById("schemeMessage").innerHTML =
-          `当 <span class="math-var">q<sub>1</sub></span> = ${formatPercent(q1, digits)}、β = ${formatPercent(beta, digits)}、r = ${r} 时，满足公式的最小样本量为 ${n}，此时左侧概率为 ${formatPercent(probability, digits)}。`;
+          `当 <span class="math-var">q<sub>1</sub></span> = ${formatPercent(q1, digits)}、β = ${formatPercent(beta, digits)}、M = ${M} 时，` +
+          `取第一个使最小样本量大于 M 的合格判定数 <span class="math-var">r*</span> = ${found.r}，` +
+          `对应最小样本量 <span class="math-var">n</span> = ${found.n}，此时左侧概率为 ${formatPercent(probability, digits)}。`;
       } catch (error) {
         showSchemeError(error.message);
       }
@@ -1716,6 +2159,37 @@
       document.getElementById("conclusion").className = "badge fail";
       document.getElementById("conclusion").textContent = "ERROR";
       document.getElementById("message").textContent = text;
+      document.getElementById("ciBar").innerHTML = "";
+    }
+
+    function wilsonInterval(n, successes, z) {
+      const p = successes / n;
+      const denom = 1 + (z * z) / n;
+      const center = (p + (z * z) / (2 * n)) / denom;
+      const spread = (z / denom) * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n));
+      return {
+        lower: Math.max(0, center - spread),
+        upper: Math.min(1, center + spread)
+      };
+    }
+
+    function renderConfidenceBar(point, lower, upper, target) {
+      const el = document.getElementById("ciBar");
+      const x = (v) => Math.max(1, Math.min(99, v * 100));
+      const top = 12, bandTop = 14, bandBot = 40, axY = 44, bot = 50;
+      let svg = '<svg viewBox="0 0 100 64" preserveAspectRatio="none" role="img" aria-label="置信区间条">';
+      [0, 0.25, 0.5, 0.75, 1].forEach((g) => {
+        svg += `<line class="ci-tick" vector-effect="non-scaling-stroke" x1="${x(g)}" y1="${top}" x2="${x(g)}" y2="${bot}" opacity="0.45"/>`;
+      });
+      svg += `<line class="ci-tick" vector-effect="non-scaling-stroke" x1="1" y1="${axY}" x2="99" y2="${axY}"/>`;
+      const xL = x(lower), xU = x(upper);
+      svg += `<rect class="ci-band" x="${xL}" y="${bandTop}" width="${Math.max(0.6, xU - xL)}" height="${bandBot - bandTop}" rx="2"/>`;
+      svg += `<line class="ci-point" vector-effect="non-scaling-stroke" x1="${x(point)}" y1="${top}" x2="${x(point)}" y2="${bot}" stroke-width="2.4"/>`;
+      if (target !== null && target >= 0 && target <= 1) {
+        svg += `<line class="ci-target" vector-effect="non-scaling-stroke" x1="${x(target)}" y1="${top - 2}" x2="${x(target)}" y2="${bot + 4}" stroke-dasharray="3 2"/>`;
+      }
+      svg += '</svg>';
+      el.innerHTML = svg;
     }
 
     function calculate() {
@@ -1726,35 +2200,69 @@
         const confidence = parseRatio(document.getElementById("confidence").value, "置信度 C");
         const target = parseRatio(document.getElementById("target").value, "最低可接受值", true);
         const digits = Number(document.getElementById("digits").value);
+        const method = document.getElementById("method").value;
+        const intervalType = document.getElementById("intervalType").value;
 
         if (!Number.isInteger(n) || n <= 0) throw new Error("样本量 n 必须为正整数");
         if (!Number.isInteger(f) || f < 0 || f > n) throw new Error("失败数 F 必须为 0 到 n 之间的整数");
 
         const successes = n - f;
         const point = successes / n;
-        const lower = lowerBound(n, f, confidence);
+
+        let trueLower, trueUpper;
+        if (method === "wilson") {
+          const w = wilsonInterval(n, successes, inverseNormal(confidence));
+          trueLower = w.lower; trueUpper = w.upper;
+        } else {
+          trueLower = lowerBound(n, f, confidence);
+          trueUpper = 1 - lowerBound(n, n - f, confidence);
+        }
+
+        let lower2 = trueLower, upper2 = trueUpper;
+        if (intervalType === "two") {
+          const c2 = (1 + confidence) / 2;
+          if (method === "wilson") {
+            const w = wilsonInterval(n, successes, inverseNormal(c2));
+            lower2 = w.lower; upper2 = w.upper;
+          } else {
+            lower2 = lowerBound(n, f, c2);
+            upper2 = 1 - lowerBound(n, n - f, c2);
+          }
+        }
+
+        let showL, showU, hero, heroLabel;
+        if (intervalType === "lower") {
+          showL = trueLower; showU = 1; hero = trueLower; heroLabel = "单侧置信下限";
+        } else if (intervalType === "upper") {
+          showL = 0; showU = trueUpper; hero = trueUpper; heroLabel = "单侧置信上限";
+        } else {
+          showL = lower2; showU = upper2; hero = lower2; heroLabel = "置信下限（双侧）";
+        }
 
         document.getElementById("metricName").textContent = metric;
-        document.getElementById("lowerBound").textContent = formatPercent(lower, digits);
+        document.getElementById("lowerLabel").textContent = heroLabel;
+        document.getElementById("lowerBound").textContent = formatPercent(hero, digits);
         document.getElementById("pointEstimate").textContent = formatPercent(point, digits);
         document.getElementById("successes").textContent = String(successes);
         document.getElementById("failureCount").textContent = String(f);
         document.getElementById("confidenceOut").textContent = formatPercent(confidence, digits);
+        renderConfidenceBar(point, showL, showU, target);
 
         const badge = document.getElementById("conclusion");
         const message = document.getElementById("message");
+        const methodName = method === "wilson" ? "Wilson 近似" : "精确法";
         if (target === null) {
           badge.className = "badge neutral";
           badge.textContent = "CALC";
-          message.textContent = `当前 ${metric} 点估计为 ${formatPercent(point, digits)}，单侧置信下限为 ${formatPercent(lower, digits)}。`;
-        } else if (lower >= target) {
+          message.textContent = `当前 ${metric} 点估计为 ${formatPercent(point, digits)}，${heroLabel}为 ${formatPercent(hero, digits)}（${methodName}）。`;
+        } else if (trueLower >= target) {
           badge.className = "badge pass";
           badge.textContent = "PASS";
-          message.textContent = `当前 ${metric} 单侧置信下限为 ${formatPercent(lower, digits)}，不低于最低可接受值 ${formatPercent(target, digits)}，判定为通过。`;
+          message.textContent = `当前 ${metric} 单侧置信下限为 ${formatPercent(trueLower, digits)}，不低于最低可接受值 ${formatPercent(target, digits)}，判定为通过（${methodName}）。`;
         } else {
           badge.className = "badge fail";
           badge.textContent = "FAIL";
-          message.textContent = `当前 ${metric} 单侧置信下限为 ${formatPercent(lower, digits)}，低于最低可接受值 ${formatPercent(target, digits)}，判定为不通过。`;
+          message.textContent = `当前 ${metric} 单侧置信下限为 ${formatPercent(trueLower, digits)}，低于最低可接受值 ${formatPercent(target, digits)}，判定为不通过（${methodName}）。`;
         }
       } catch (error) {
         showError(error.message);
@@ -1773,8 +2281,25 @@
       document.getElementById("failures").value = "2";
       document.getElementById("target").value = "90%";
       document.getElementById("digits").value = "4";
+      document.getElementById("method").value = "exact";
+      document.getElementById("intervalType").value = "lower";
       calculate();
     });
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const root = document.documentElement;
+      const isDark = root.getAttribute("data-theme") === "dark";
+      root.setAttribute("data-theme", isDark ? "light" : "dark");
+      try { localStorage.setItem("gjb-theme", isDark ? "light" : "dark"); } catch (e) {}
+    });
+
+    try {
+      const saved = localStorage.getItem("gjb-theme");
+      if (saved === "dark") document.documentElement.setAttribute("data-theme", "dark");
+    } catch (e) {}
+
+    document.getElementById("copyMaintain").addEventListener("click", copyMaintain);
+    document.getElementById("csvMaintain").addEventListener("click", exportMaintainCsv);
 
     schemeForm.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -1784,7 +2309,7 @@
     schemeResetBtn.addEventListener("click", () => {
       document.getElementById("q1Input").value = "90%";
       document.getElementById("betaInput").value = "10%";
-      document.getElementById("rInput").value = "0";
+      document.getElementById("mInput").value = "30";
       document.getElementById("maxSearchN").value = "10000";
       calculateScheme();
     });
