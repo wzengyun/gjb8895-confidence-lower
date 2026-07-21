@@ -1,1938 +1,774 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GJB 8895 单侧置信下限计算器</title>
-  <style>
-    :root {
-      --ink: #172033;
-      --muted: #667085;
-      --line: #d8dee8;
-      --panel: #ffffff;
-      --soft: #f4f7fb;
-      --navy: #132238;
-      --teal: #0f766e;
-      --teal-soft: #e6f5f3;
-      --gold: #b7791f;
-      --red: #b42318;
-      --red-soft: #fee4e2;
-      --green: #067647;
-      --green-soft: #dcfae6;
-      --shadow: 0 24px 60px rgba(23, 32, 51, 0.16);
-      --shadow-soft: 0 10px 24px rgba(23, 32, 51, 0.1);
-      --shadow-lift: 0 18px 36px rgba(15, 35, 60, 0.14);
-      --radius: 16px;
-      --radius-sm: 11px;
-      --accent: #0f766e;
-      --accent-strong: #0b6d66;
-      --accent-soft: #e6f5f3;
-      --ink-soft: #475467;
-      --hairline: rgba(15, 35, 60, 0.08);
-      --num-font: "SF Mono", "JetBrains Mono", "Roboto Mono", "Cascadia Code", Consolas, "Microsoft YaHei", monospace;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      color: var(--ink);
-      font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
-      font-variant-numeric: tabular-nums;
-      background:
-        radial-gradient(circle at 18% 18%, rgba(98, 178, 211, 0.28) 0, rgba(98, 178, 211, 0) 28%),
-        radial-gradient(circle at 82% 32%, rgba(15, 118, 110, 0.2) 0, rgba(15, 118, 110, 0) 25%),
-        linear-gradient(118deg, rgba(15, 118, 110, 0.18) 0%, rgba(15, 118, 110, 0) 34%),
-        linear-gradient(242deg, rgba(61, 102, 158, 0.2) 0%, rgba(61, 102, 158, 0) 38%),
-        linear-gradient(180deg, #16263c 0%, #18395a 26%, #d5eafa 26.2%, #edf4fb 72%, #f8fafc 100%);
-      position: relative;
-      overflow-x: hidden;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background-image:
-        linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-      background-size: 44px 44px;
-      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.46), rgba(0, 0, 0, 0.04) 58%, transparent 100%);
-    }
-
-    body::after {
-      content: "";
-      position: fixed;
-      left: 50%;
-      top: 190px;
-      width: min(980px, 82vw);
-      height: 420px;
-      transform: translateX(-50%);
-      pointer-events: none;
-      background:
-        radial-gradient(ellipse at center, rgba(255, 255, 255, 0.46) 0%, rgba(255, 255, 255, 0.22) 38%, rgba(255, 255, 255, 0) 70%);
-      filter: blur(22px);
-      opacity: 0.85;
-    }
-
-    .shell {
-      width: min(1180px, calc(100vw - 40px));
-      margin: 0 auto;
-      padding: 34px 0 42px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-      color: #fff;
-      margin-bottom: 30px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      min-width: 0;
-    }
-
-    .mark {
-      width: 46px;
-      height: 46px;
-      border: 1px solid rgba(255, 255, 255, 0.28);
-      display: grid;
-      place-items: center;
-      font-weight: 800;
-      letter-spacing: 0;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 8px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 28px;
-      line-height: 1.25;
-      letter-spacing: 0;
-    }
-
-    .subtitle {
-      margin: 5px 0 0;
-      color: rgba(255, 255, 255, 0.72);
-      font-size: 14px;
-    }
-
-    .standard-chip {
-      flex: 0 0 auto;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 13px;
-      border-radius: 8px;
-      color: #d7f7f3;
-      background: rgba(15, 118, 110, 0.28);
-      border: 1px solid rgba(215, 247, 243, 0.24);
-      font-size: 14px;
-    }
-
-    .nav-tabs {
-      display: inline-flex;
-      gap: 8px;
-      padding: 6px;
-      margin: 0 0 18px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-    }
-
-    .tab-button {
-      height: 38px;
-      border-radius: 8px;
-      padding: 0 16px;
-      color: rgba(255, 255, 255, 0.78);
-      background: transparent;
-      border: 1px solid transparent;
-      box-shadow: none;
-      font-size: 14px;
-      font-weight: 900;
-    }
-
-    .tab-button.active {
-      color: #0f766e;
-      background: #ffffff;
-      border-color: rgba(255, 255, 255, 0.55);
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-    }
-
-    .page {
-      display: none;
-    }
-
-    .page.active {
-      display: block;
-    }
-
-    .main {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-      align-items: stretch;
-      padding: 14px;
-      border: 1px solid rgba(216, 222, 232, 0.72);
-      border-radius: 8px;
-      background:
-        linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(230, 244, 255, 0.68)),
-        rgba(255, 255, 255, 0.72);
-      box-shadow:
-        0 26px 70px rgba(15, 35, 60, 0.22),
-        0 9px 18px rgba(15, 35, 60, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.72);
-      backdrop-filter: blur(10px);
-      position: relative;
-    }
-
-    .main::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 8px;
-      pointer-events: none;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 28%);
-    }
-
-    .panel {
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 253, 255, 0.94));
-      border: 1px solid rgba(206, 216, 229, 0.92);
-      border-radius: 8px;
-      overflow: hidden;
-      min-height: 100%;
-      display: flex;
-      flex-direction: column;
-      box-shadow:
-        var(--shadow-lift),
-        0 1px 0 rgba(255, 255, 255, 0.9) inset;
-      position: relative;
-      z-index: 1;
-      transform: translateZ(0);
-    }
-
-    .panel::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      height: 3px;
-      background: linear-gradient(90deg, rgba(15, 118, 110, 0.72), rgba(62, 129, 190, 0.2), rgba(255, 255, 255, 0.7));
-      pointer-events: none;
-    }
-
-    .panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 20px 22px;
-      border-bottom: 1px solid var(--line);
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 249, 253, 0.94) 100%);
-      box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.7);
-    }
-
-    .panel-title {
-      margin: 0;
-      font-size: 18px;
-      line-height: 1.35;
-    }
-
-    .panel-note {
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    .form {
-      padding: 22px;
-      display: grid;
-      gap: 18px;
-      align-content: start;
-      flex: 1;
-    }
-
-    .field-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    label {
-      display: block;
-      color: #344054;
-      font-weight: 800;
-      font-size: 15px;
-      margin-bottom: 8px;
-    }
-
-    input,
-    select,
-    textarea {
-      width: 100%;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      color: var(--ink);
-      background: #fff;
-      font-size: 15px;
-      outline: none;
-      box-shadow: inset 0 1px 2px rgba(23, 32, 51, 0.04);
-      transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-    }
-
-    input,
-    select {
-      height: 46px;
-      padding: 0 13px;
-    }
-
-    textarea {
-      min-height: 136px;
-      resize: vertical;
-      padding: 12px 13px;
-      line-height: 1.55;
-      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
-    }
-
-    input:focus,
-    select:focus,
-    textarea:focus {
-      border-color: var(--teal);
-      box-shadow:
-        0 0 0 4px rgba(15, 118, 110, 0.12),
-        0 10px 18px rgba(15, 118, 110, 0.08);
-    }
-
-    .hint {
-      margin-top: 7px;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 650;
-      line-height: 1.45;
-    }
-
-    .actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 2px;
-    }
-
-    button {
-      height: 46px;
-      border: 0;
-      border-radius: 8px;
-      padding: 0 18px;
-      font-size: 15px;
-      font-weight: 800;
-      cursor: pointer;
-    }
-
-    .primary {
-      color: #fff;
-      background: linear-gradient(180deg, #12847b 0%, #0b6d66 100%);
-      box-shadow:
-        0 12px 22px rgba(15, 118, 110, 0.26),
-        inset 0 1px 0 rgba(255, 255, 255, 0.22);
-    }
-
-    .secondary {
-      color: #344054;
-      background: linear-gradient(180deg, #f4f7fb 0%, #e8eef5 100%);
-      border: 1px solid #d8dee8;
-      box-shadow:
-        0 8px 16px rgba(23, 32, 51, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.9);
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-    }
-
-    button:active {
-      transform: translateY(0);
-    }
-
-    .result-card {
-      padding: 22px;
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-    }
-
-    .hero-result {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 16px;
-      align-items: center;
-      padding: 18px;
-      border-radius: 8px;
-      background:
-        linear-gradient(135deg, rgba(232, 253, 250, 0.98) 0%, rgba(248, 251, 255, 0.98) 100%);
-      border: 1px solid #c7eee9;
-      box-shadow:
-        0 14px 28px rgba(15, 118, 110, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.95);
-      margin-bottom: 18px;
-    }
-
-    .result-label {
-      color: #475467;
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .result-value {
-      font-size: 36px;
-      line-height: 1;
-      font-weight: 900;
-      color: var(--teal);
-    }
-
-    .badge {
-      min-width: 82px;
-      text-align: center;
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-weight: 900;
-      letter-spacing: 0;
-    }
-
-    .badge.pass {
-      color: var(--green);
-      background: var(--green-soft);
-      border: 1px solid #abefc6;
-    }
-
-    .badge.fail {
-      color: var(--red);
-      background: var(--red-soft);
-      border: 1px solid #fecdca;
-    }
-
-    .badge.neutral {
-      color: var(--gold);
-      background: #fff7e6;
-      border: 1px solid #f6d99c;
-    }
-
-    .metrics {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .metric {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 14px;
-      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-      box-shadow:
-        0 8px 16px rgba(23, 32, 51, 0.06),
-        inset 0 1px 0 rgba(255, 255, 255, 0.95);
-    }
-
-    .metric span {
-      display: block;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 800;
-      margin-bottom: 7px;
-    }
-
-    .metric strong {
-      display: block;
-      font-size: 20px;
-      line-height: 1.2;
-    }
-
-    /* ---- 卡方模块：科学读数样式（仅作用于 chiPage） ---- */
-    #chiPage .result-label {
-      font-family: var(--num-font);
-      letter-spacing: 0.01em;
-      font-size: 14px;
-    }
-    #chiPage .result-value {
-      font-family: var(--num-font);
-      font-weight: 800;
-      letter-spacing: -0.01em;
-      font-size: 38px;
-    }
-    #chiPage .metrics {
-      display: block;
-      grid-template-columns: none;
-      gap: 0;
-      margin-bottom: 14px;
-    }
-    #chiPage .metric {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 18px;
-      border: none;
-      border-bottom: 1px solid var(--hairline);
-      border-radius: 0;
-      padding: 12px 2px;
-      background: none;
-      box-shadow: none;
-    }
-    #chiPage .metric:last-child {
-      border-bottom: none;
-    }
-    #chiPage .metric span {
-      margin: 0;
-      color: var(--ink-soft);
-      font-size: 13px;
-      font-weight: 600;
-      text-align: left;
-      flex: 1 1 auto;
-      min-width: 0;
-    }
-    #chiPage .metric strong {
-      font-family: var(--num-font);
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--ink);
-      text-align: right;
-      flex: 0 1 auto;
-      min-width: 0;
-      overflow-wrap: anywhere;
-      line-height: 1.3;
-    }
-    #chiPage .chi-pmf {
-      margin: 4px 0 16px;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    #chiPage .chi-pmf table {
-      width: 100%;
-      border-collapse: collapse;
-      font-family: var(--num-font);
-      font-size: 13px;
-      font-variant-numeric: tabular-nums;
-    }
-    #chiPage .chi-pmf caption {
-      caption-side: top;
-      text-align: left;
-      padding: 10px 12px 6px;
-      color: var(--ink-soft);
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-    #chiPage .chi-pmf th, #chiPage .chi-pmf td {
-      padding: 7px 12px;
-      text-align: right;
-      border-top: 1px solid var(--hairline);
-    }
-    #chiPage .chi-pmf th:first-child, #chiPage .chi-pmf td:first-child {
-      text-align: left;
-    }
-    #chiPage .chi-pmf thead th {
-      color: var(--muted);
-      font-weight: 700;
-      background: #f6f9fc;
-    }
-    #chiPage .chi-pmf tbody tr:nth-child(even) {
-      background: #fafcfe;
-    }
-    #chiPage .chi-pmf tbody tr.chi-pmf-hl {
-      background: var(--accent-soft);
-      font-weight: 700;
-    }
-
-    .formula {
-      border-radius: 8px;
-      background: linear-gradient(180deg, #f7fbff 0%, #eef8fb 100%);
-      color: #172033;
-      padding: 17px 18px;
-      border: 1px solid #c9e3ee;
-      box-shadow:
-        0 10px 22px rgba(23, 62, 89, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.9);
-      font-family: "Cambria Math", Cambria, "Times New Roman", serif;
-      font-size: 20px;
-      line-height: 1.45;
-      overflow-x: auto;
-      text-align: center;
-    }
-
-    .formula math {
-      font-family: "Cambria Math", Cambria, "Times New Roman", serif;
-      font-size: 1.08em;
-    }
-
-    .formula-caption {
-      margin-top: 8px;
-      color: #667085;
-      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      text-align: center;
-    }
-
-    .message {
-      margin-top: 14px;
-      color: #475467;
-      font-size: 14px;
-      line-height: 1.7;
-      padding: 13px 14px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #fbfcfe;
-    }
-
-    .footer {
-      margin-top: 18px;
-      color: #667085;
-      font-size: 12px;
-      line-height: 1.65;
-      margin-bottom: 0;
-    }
-
-    .wide-main {
-      grid-template-columns: minmax(360px, 0.82fr) minmax(0, 1.18fr);
-    }
-
-    .scheme-result {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .result-emphasis {
-      grid-column: span 3;
-      padding: 18px;
-      border-radius: 8px;
-      border: 1px solid #c7eee9;
-      background: linear-gradient(135deg, #edfdfb 0%, #f8fbff 100%);
-      box-shadow:
-        0 16px 32px rgba(15, 118, 110, 0.13),
-        inset 0 1px 0 rgba(255, 255, 255, 0.92);
-    }
-
-    .result-emphasis span {
-      display: block;
-      color: #475467;
-      font-size: 13px;
-      font-weight: 900;
-      margin-bottom: 8px;
-    }
-
-    .result-emphasis strong {
-      display: block;
-      color: var(--teal);
-      font-size: 38px;
-      line-height: 1;
-      font-weight: 950;
-    }
-
-    .table-wrap {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      overflow: auto;
-      max-height: 460px;
-      background: #ffffff;
-      box-shadow:
-        0 12px 28px rgba(23, 32, 51, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.9);
-    }
-
-    .scheme-table {
-      width: 100%;
-      min-width: 780px;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-
-    .scheme-table th,
-    .scheme-table td {
-      padding: 9px 10px;
-      text-align: right;
-      border-bottom: 1px solid #e6ebf2;
-      border-right: 1px solid #edf1f5;
-      white-space: nowrap;
-    }
-
-    .scheme-table th {
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      color: #344054;
-      background: #f5f8fb;
-      font-weight: 900;
-    }
-
-    .scheme-table th:first-child,
-    .scheme-table td:first-child {
-      position: sticky;
-      left: 0;
-      z-index: 2;
-      text-align: center;
-      background: #f8fafc;
-      font-weight: 900;
-    }
-
-    .scheme-table th:first-child {
-      z-index: 3;
-    }
-
-    .scheme-table tr.scan-selected td {
-      background: #e8f3ff;
-      font-weight: 900;
-      color: #0b61c4;
-    }
-
-    .table-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .table-title {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 900;
-    }
-
-    .full-span {
-      grid-column: 1 / -1;
-    }
-
-    .compact-form {
-      gap: 14px;
-    }
-
-    .formula-list {
-      display: grid;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-
-    .formula-mini {
-      border-radius: 8px;
-      background: linear-gradient(180deg, #f8fbff 0%, #eef8fb 100%);
-      border: 1px solid #d8e9f2;
-      padding: 12px;
-      overflow-x: auto;
-      font-family: "Cambria Math", Cambria, "Times New Roman", serif;
-      font-size: 17px;
-      text-align: center;
-    }
-
-    .decision-list {
-      display: grid;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .decision {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 12px;
-      align-items: center;
-      padding: 12px 14px;
-      border-radius: 8px;
-      border: 1px solid var(--line);
-      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-      box-shadow: var(--shadow-soft);
-    }
-
-    .decision strong {
-      display: block;
-      font-size: 14px;
-      margin-bottom: 4px;
-    }
-
-    .decision span {
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.55;
-    }
-
-    .status {
-      min-width: 64px;
-      border-radius: 8px;
-      padding: 8px 10px;
-      text-align: center;
-      font-size: 13px;
-      font-weight: 950;
-    }
-
-    .status.pass {
-      color: var(--green);
-      background: var(--green-soft);
-      border: 1px solid #abefc6;
-    }
-
-    .status.fail {
-      color: var(--red);
-      background: var(--red-soft);
-      border: 1px solid #fecdca;
-    }
-
-    .status.neutral {
-      color: var(--gold);
-      background: #fff7e6;
-      border: 1px solid #f6d99c;
-    }
-
-    .data-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 8px;
-    }
-
-    .mini-button {
-      height: 32px;
-      padding: 0 11px;
-      font-size: 13px;
-      color: #344054;
-      background: linear-gradient(180deg, #f4f7fb 0%, #e9eff6 100%);
-      border: 1px solid #d8dee8;
-      box-shadow:
-        0 5px 12px rgba(23, 32, 51, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.9);
-    }
-
-    .warning {
-      margin-top: 10px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      color: #854a0e;
-      background: #fff7e6;
-      border: 1px solid #f6d99c;
-      font-size: 13px;
-      line-height: 1.55;
-      font-weight: 700;
-    }
-
-    sub,
-    .math-var sub {
-      font-size: 0.68em;
-      line-height: 0;
-      vertical-align: -0.38em;
-      font-weight: 850;
-    }
-
-    .math-var {
-      font-family: "Cambria Math", Cambria, "Times New Roman", serif;
-      font-style: italic;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-      @media (max-width: 900px) {
-      body {
-        background:
-          linear-gradient(118deg, rgba(15, 118, 110, 0.18) 0%, rgba(15, 118, 110, 0) 38%),
-          linear-gradient(242deg, rgba(61, 102, 158, 0.18) 0%, rgba(61, 102, 158, 0) 42%),
-          linear-gradient(180deg, #16263c 0%, #18395a 34%, #d5eafa 34.2%, #edf4fb 78%, #f8fafc 100%);
-      }
-
-      .topbar,
-      .main {
-        grid-template-columns: 1fr;
-      }
-
-      .wide-main {
-        grid-template-columns: 1fr;
-      }
-
-      .topbar {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-
-      .main {
-        display: grid;
-        padding: 12px;
-      }
-    }
-
-    @media (max-width: 620px) {
-      .shell {
-        width: min(100vw - 24px, 1180px);
-        padding-top: 20px;
-      }
-
-      h1 {
-        font-size: 23px;
-      }
-
-      .field-grid,
-      .metrics,
-      .hero-result,
-      .scheme-result {
-        grid-template-columns: 1fr;
-      }
-
-      .result-emphasis {
-        grid-column: span 1;
-      }
-
-      .nav-tabs {
-        display: grid;
-        width: 100%;
-      }
-
-      .panel-header,
-      .form,
-      .result-card {
-        padding: 16px;
-      }
-
-      .main {
-        padding: 8px;
-        gap: 10px;
-      }
-
-      .panel-note {
-        display: none;
-      }
-
-      .actions {
-        flex-direction: column;
-      }
-
-      button {
-        width: 100%;
-      }
-    }
-      /* ===== 高级感增强：图标 / 微交互 / 可视化 / 暗色主题 ===== */
-    body,
-    .main,
-    .nav-tabs,
-    .tab-button,
-    .panel {
-      transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-    }
-
-    .nav-tabs {
-      position: sticky;
-      top: 12px;
-      z-index: 6;
-    }
-
-    .tab-button {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .tab-button svg {
-      width: 17px;
-      height: 17px;
-      flex: 0 0 auto;
-    }
-
-    @keyframes pop {
-      0% { transform: scale(0.95); opacity: 0.45; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-
-    .result-value {
-      animation: pop 0.35s ease;
-    }
-
-    .badge {
-      transition: transform 0.18s ease, box-shadow 0.18s ease;
-    }
-
-    .badge.pass {
-      box-shadow: 0 8px 18px rgba(6, 118, 71, 0.18);
-    }
-
-    .badge.fail {
-      box-shadow: 0 8px 18px rgba(180, 35, 24, 0.18);
-    }
-
-    .org-slot {
-      margin: 6px 0 0;
-      font-size: 12.5px;
-      color: rgba(255, 255, 255, 0.62);
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-
-    .topbar-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .theme-toggle {
-      width: 42px;
-      height: 38px;
-      padding: 0;
-      border-radius: var(--radius-sm);
-      display: grid;
-      place-items: center;
-      color: #fff;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      box-shadow: none;
-    }
-
-    .theme-toggle svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .theme-toggle .icon-moon {
-      display: none;
-    }
-
-    [data-theme="dark"] .theme-toggle .icon-sun {
-      display: none;
-    }
-
-    [data-theme="dark"] .theme-toggle .icon-moon {
-      display: block;
-    }
-
-    .ci-bar {
-      margin: 2px 0 18px;
-    }
-
-    .ci-bar svg {
-      width: 100%;
-      height: 70px;
-      display: block;
-    }
-
-    .ci-band {
-      fill: rgba(15, 118, 110, 0.16);
-      stroke: rgba(15, 118, 110, 0.55);
-      stroke-width: 1;
-    }
-
-    .ci-point {
-      fill: var(--accent-strong);
-    }
-
-    .ci-target {
-      stroke: var(--gold);
-      stroke-width: 2;
-    }
-
-    .ci-tick {
-      stroke: var(--line);
-      stroke-width: 1;
-    }
-
-    .ci-label {
-      font-size: 10px;
-      fill: var(--muted);
-      font-family: var(--num-font);
-    }
-
-    .export-bar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 4px 0 12px;
-      flex-wrap: wrap;
-    }
-
-    .export-label {
-      font-size: 13px;
-      color: var(--muted);
-      font-weight: 800;
-    }
-
-    .norm-chip {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 10px;
-      padding: 10px 12px;
-      border-radius: var(--radius-sm);
-      font-size: 13px;
-      font-weight: 800;
-      line-height: 1.5;
-    }
-
-    .norm-chip.pass {
-      color: var(--green);
-      background: var(--green-soft);
-      border: 1px solid #abefc6;
-    }
-
-    .norm-chip.fail {
-      color: var(--red);
-      background: var(--red-soft);
-      border: 1px solid #fecdca;
-    }
-
-    .norm-chip[hidden] {
-      display: none;
-    }
-
-    .scan-selected td {
-      background: rgba(15, 118, 110, 0.12) !important;
-      font-weight: 800;
-    }
-
-    /* ===== 暗色主题（浅卡片 + 深底，仪表盘风格） ===== */
-    [data-theme="dark"] body {
-      background:
-        radial-gradient(circle at 18% 12%, rgba(56, 189, 248, 0.1) 0, rgba(56, 189, 248, 0) 30%),
-        radial-gradient(circle at 82% 20%, rgba(15, 118, 110, 0.18) 0, rgba(15, 118, 110, 0) 28%),
-        linear-gradient(180deg, #0b1320 0%, #0f1b2e 42%, #0b111c 100%);
-    }
-
-    [data-theme="dark"] body::before {
-      opacity: 0.4;
-    }
-
-    [data-theme="dark"] .main {
-      background: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
-      border-color: rgba(255, 255, 255, 0.12);
-      box-shadow: 0 26px 70px rgba(0, 0, 0, 0.5), 0 9px 18px rgba(0, 0, 0, 0.3);
-    }
-
-    [data-theme="dark"] .nav-tabs {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: rgba(255, 255, 255, 0.12);
-    }
-
-    [data-theme="dark"] .tab-button {
-      color: rgba(255, 255, 255, 0.72);
-    }
-
-    [data-theme="dark"] .tab-button.active {
-      color: var(--accent-strong);
-      background: #fff;
-    }
-
-    /* ---- 卡方模块：计算模式单独成行（完整展示） ---- */
-    #chiPage .chi-mode-row { margin-bottom: 14px; }
-    #chiPage .chi-mode-row label { display: block; font-size: 13px; color: var(--ink-soft); margin-bottom: 6px; }
-
-    /* ---- 统计分布模块 ---- */
-    #distPage .dist-tabs { display: flex; gap: 8px; margin: 4px 0 16px; flex-wrap: wrap; }
-    #distPage .dist-tab {
-      flex: 1 1 140px; padding: 11px 14px; border: 1px solid var(--hairline);
-      background: var(--panel); border-radius: var(--radius-sm); cursor: pointer;
-      color: var(--ink-soft); font-weight: 600; font-size: 14px; transition: .15s;
-    }
-    #distPage .dist-tab:hover { border-color: var(--accent); }
-    #distPage .dist-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: var(--shadow-soft); }
-    #distPage .dist-body { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
-    #distPage .dist-side { flex: 1 1 320px; min-width: 280px; }
-    #distPage .dist-params { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 12px; margin-bottom: 16px; }
-    #distPage .dist-params .p-field label { display: block; font-size: 13px; color: var(--ink-soft); margin-bottom: 5px; }
-    #distPage .dist-params .p-field input {
-      width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px;
-      background: var(--panel); color: var(--ink); font-family: var(--num-font); font-size: 14px;
-    }
-    #distPage .dist-params .p-field input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-    #distPage .formula-block {
-      background: var(--soft); border: 1px solid var(--hairline); border-left: 3px solid var(--accent);
-      border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 10px;
-    }
-    #distPage .formula-title { font-size: 12px; color: var(--muted); margin-bottom: 5px; letter-spacing: .04em; }
-    #distPage .formula {
-      font-family: "Cambria Math", "Latin Modern Math", Georgia, "Times New Roman", serif;
-      font-style: italic; font-size: 18px; line-height: 1.5; color: var(--ink); word-break: break-word;
-    }
-    #distPage .formula sup { font-size: .7em; }
-    #distPage .dist-chart-wrap { flex: 1 1 380px; min-width: 300px; }
-    #distPage .dist-chart-toolbar { display: flex; justify-content: flex-end; margin-bottom: 8px; }
-    #distPage .dist-toggle { display: inline-flex; border: 1px solid var(--hairline); border-radius: 10px; overflow: hidden; }
-    #distPage .dist-toggle button { border: none; background: var(--panel); padding: 7px 14px; cursor: pointer; color: var(--ink-soft); font: inherit; font-size: 13px; }
-    #distPage .dist-toggle button + button { border-left: 1px solid var(--hairline); }
-    #distPage .dist-toggle button.active { background: var(--accent); color: #fff; }
-    #distPage .dist-chart { background: var(--soft); border: 1px solid var(--hairline); border-radius: var(--radius-sm); padding: 8px; }
-    #distPage .dist-svg { width: 100%; height: auto; display: block; }
-    #distPage .dist-legend { display: flex; gap: 16px; margin-top: 8px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
-    #distPage .lg-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
-    #distPage .lg-swatch.pdf { background: var(--accent); }
-    #distPage .lg-swatch.cdf { background: var(--gold); }
-    #distPage .dist-grid { stroke: var(--hairline); stroke-width: 1; }
-    #distPage .dist-axis { stroke: var(--ink-soft); stroke-width: 1.2; }
-    #distPage .dist-tick { fill: var(--muted); font-size: 11px; font-family: var(--num-font); }
-    #distPage .dist-pdf-area { fill: url(#distPdfGrad); }
-    #distPage .dist-pdf-line { fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
-    #distPage .dist-cdf-line { fill: none; stroke: var(--gold); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
-    #distPage .dist-grad-top { stop-color: var(--accent); stop-opacity: .30; }
-    #distPage .dist-grad-bottom { stop-color: var(--accent); stop-opacity: 0; }
-    #distPage .dist-marker { stroke: var(--red); stroke-width: 1; stroke-dasharray: 4 3; opacity: .6; }
-    #distPage .dist-marker-label { fill: var(--red); font-size: 11px; font-family: var(--num-font); }
-    #distPage .dist-hover-line { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 3; opacity: .5; }
-    #distPage .dist-hover-dot { fill: var(--accent); stroke: #fff; stroke-width: 1.5; }
-    #distPage .dist-hover-text { fill: var(--ink); font-size: 11px; font-family: var(--num-font); }
-    @media (max-width: 860px) { #distPage .dist-body { flex-direction: column; } }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>六性统计计算台 · 可靠性数理统计工具</title>
+<style>
+  :root {
+    --bg-1: #eef2f9;
+    --bg-2: #e6ecf7;
+    --blob-1: rgba(120, 168, 224, 0.55);
+    --blob-2: rgba(120, 214, 206, 0.45);
+    --blob-3: rgba(168, 158, 224, 0.42);
+    --glass: rgba(255, 255, 255, 0.55);
+    --glass-strong: rgba(255, 255, 255, 0.72);
+    --glass-soft: rgba(255, 255, 255, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.75);
+    --glass-shadow: 0 10px 34px rgba(31, 45, 80, 0.14);
+    --glass-shadow-lg: 0 22px 60px rgba(31, 45, 80, 0.20);
+    --text: #1d283b;
+    --text-soft: #4a5a73;
+    --muted: #8a98ad;
+    --accent: #4a90d9;
+    --accent-strong: #2f6fb8;
+    --accent2: #46c4bd;
+    --accent-soft: rgba(74, 144, 217, 0.14);
+    --accent2-soft: rgba(70, 196, 189, 0.16);
+    --pass: #2fa46f;
+    --fail: #dd7a7a;
+    --warn: #cf9a33;
+    --num-font: "SF Mono", "JetBrains Mono", "Roboto Mono", ui-monospace, Menlo, Consolas, monospace;
+    --radius-lg: 24px;
+    --radius: 18px;
+    --radius-sm: 12px;
+    --hairline: rgba(31, 45, 80, 0.08);
+  }
+  [data-theme="dark"] {
+    --bg-1: #0e131c;
+    --bg-2: #0a0e16;
+    --blob-1: rgba(64, 120, 196, 0.40);
+    --blob-2: rgba(50, 170, 162, 0.30);
+    --blob-3: rgba(120, 110, 196, 0.32);
+    --glass: rgba(38, 50, 70, 0.46);
+    --glass-strong: rgba(46, 60, 84, 0.60);
+    --glass-soft: rgba(40, 52, 72, 0.34);
+    --glass-border: rgba(255, 255, 255, 0.13);
+    --glass-shadow: 0 14px 44px rgba(0, 0, 0, 0.50);
+    --glass-shadow-lg: 0 26px 70px rgba(0, 0, 0, 0.58);
+    --text: #e9eef7;
+    --text-soft: #aab6c8;
+    --muted: #76859b;
+    --accent: #6fb0f0;
+    --accent-strong: #8cc2f5;
+    --accent2: #5bd6cf;
+    --accent-soft: rgba(111, 176, 240, 0.18);
+    --accent2-soft: rgba(91, 214, 207, 0.18);
+    --pass: #4fc08d;
+    --fail: #ef8d8d;
+    --warn: #e0b252;
+    --hairline: rgba(255, 255, 255, 0.08);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", system-ui, -apple-system, sans-serif;
+    color: var(--text);
+    background: linear-gradient(160deg, var(--bg-1), var(--bg-2));
+    background-attachment: fixed;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+    transition: background .5s ease, color .35s ease;
+  }
+
+  /* ===== ambient light blobs ===== */
+  .bg-blobs { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .bg-blobs .blob { position: absolute; border-radius: 50%; filter: blur(70px); opacity: .9; }
+  .bg-blobs .b1 { width: 46vw; height: 46vw; left: -10vw; top: -12vw; background: radial-gradient(circle at 30% 30%, var(--blob-1), transparent 70%); }
+  .bg-blobs .b2 { width: 40vw; height: 40vw; right: -8vw; top: 6vw; background: radial-gradient(circle at 60% 40%, var(--blob-2), transparent 70%); }
+  .bg-blobs .b3 { width: 42vw; height: 42vw; left: 22vw; bottom: -16vw; background: radial-gradient(circle at 50% 50%, var(--blob-3), transparent 70%); }
+
+  /* ===== glass primitive ===== */
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(24px) saturate(165%);
+    -webkit-backdrop-filter: blur(24px) saturate(165%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* ===== loading bar (Apple buffer) ===== */
+  #loadingBar {
+    position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 60;
+    background: transparent; opacity: 0; transition: opacity .25s ease; pointer-events: none;
+  }
+  #loadingBar.active { opacity: 1; }
+  #loadingBar::after {
+    content: ""; position: absolute; left: 0; top: 0; height: 100%;
+    width: 38%; border-radius: 0 3px 3px 0;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+    animation: buffer 1.15s cubic-bezier(.4,0,.2,1) infinite;
+  }
+  @keyframes buffer { 0% { left: -40%; } 100% { left: 100%; } }
+
+  /* ===== top nav ===== */
+  .topnav {
+    position: sticky; top: 12px; z-index: 30;
+    margin: 12px 18px 0; padding: 10px 16px;
+    display: flex; align-items: center; gap: 18px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; padding-right: 18px; border-right: 1px solid var(--hairline); }
+  .brand .mark { width: 34px; height: 34px; flex: none; filter: drop-shadow(0 4px 10px var(--accent-soft)); }
+  .brand .name { font-weight: 650; font-size: 15px; line-height: 1.1; }
+  .brand .sub { font-size: 11px; color: var(--muted); letter-spacing: .08em; }
+  .top-cats { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
+  .top-cat {
+    border: 1px solid transparent; background: transparent; color: var(--text-soft);
+    padding: 8px 16px; border-radius: 999px; font-size: 13.5px; cursor: pointer;
+    transition: all .28s ease; font-family: inherit;
+  }
+  .top-cat:hover { color: var(--text); background: var(--glass-soft); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .top-cat.active { color: var(--accent-strong); background: var(--glass-strong); border-color: var(--glass-border); box-shadow: var(--glass-shadow); font-weight: 600; }
+  .top-actions { display: flex; align-items: center; gap: 8px; }
+  .icon-btn {
+    width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--glass-border);
+    background: var(--glass-soft); color: var(--text-soft); cursor: pointer; display: grid; place-items: center;
+    transition: all .28s ease;
+  }
+  .icon-btn:hover { color: var(--accent-strong); box-shadow: 0 0 0 4px var(--accent-soft); transform: translateY(-1px); }
+  .icon-btn svg { width: 19px; height: 19px; }
+  [data-theme="dark"] .icon-sun { display: none; }
+  [data-theme="light"] .icon-moon { display: none; }
+
+  /* ===== layout ===== */
+  .app { display: flex; gap: 18px; padding: 18px; align-items: flex-start; position: relative; z-index: 1; }
+  .sidebar {
+    width: 232px; flex: none; padding: 14px; position: sticky; top: 92px;
+    max-height: calc(100vh - 110px); overflow: auto;
+  }
+  .side-title { font-size: 11px; letter-spacing: .12em; color: var(--muted); padding: 6px 10px 10px; text-transform: uppercase; }
+  .side-item {
+    display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+    border: 1px solid transparent; background: transparent; color: var(--text-soft);
+    padding: 11px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13.5px;
+    font-family: inherit; transition: all .26s ease; margin-bottom: 4px;
+  }
+  .side-item:hover { color: var(--text); background: var(--glass-soft); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .side-item.active { color: var(--accent-strong); background: var(--glass-strong); border-color: var(--glass-border); box-shadow: var(--glass-shadow); font-weight: 600; }
+  .side-item svg { width: 18px; height: 18px; flex: none; opacity: .85; }
+
+  .main-scroll { flex: 1; min-width: 0; }
+  .view { display: none; animation: fadeUp .42s ease both; }
+  .view.active { display: block; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  /* ===== cards / grid ===== */
+  .grid { display: grid; gap: 18px; }
+  .cols-2 { grid-template-columns: 1fr 1fr; }
+  .cols-3 { grid-template-columns: 1.05fr 1fr 1.1fr; }
+  @media (max-width: 1080px) { .cols-3, .cols-2 { grid-template-columns: 1fr; } }
+  .card { padding: 22px 22px 24px; }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .card-title { font-size: 14.5px; font-weight: 650; letter-spacing: .02em; }
+  .card-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ===== form controls (glass, Apple-like) ===== */
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+  @media (max-width: 720px) { .field-grid { grid-template-columns: 1fr; } }
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field.full { grid-column: 1 / -1; }
+  label { font-size: 12.5px; color: var(--text-soft); font-weight: 500; }
+  .hint { font-size: 11px; color: var(--muted); }
+  input[type="number"], input[type="text"], select, textarea {
+    width: 100%; font-family: inherit; font-size: 14px; color: var(--text);
+    background: var(--glass-strong); border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm); padding: 11px 13px; outline: none;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 2px rgba(255,255,255,.4), 0 1px 2px rgba(31,45,80,.06);
+    transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+  select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a98ad' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 13px center; padding-right: 34px; }
+  textarea { resize: vertical; min-height: 120px; line-height: 1.6; font-family: var(--num-font); }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+  .glass-btn {
+    font-family: inherit; font-size: 13.5px; cursor: pointer; color: var(--text);
+    background: var(--glass-strong); border: 1px solid var(--glass-border);
+    border-radius: 999px; padding: 10px 18px; transition: all .26s ease;
+    box-shadow: var(--glass-shadow); font-weight: 550;
+  }
+  .glass-btn:hover { color: var(--accent-strong); box-shadow: 0 0 0 4px var(--accent-soft), var(--glass-shadow); transform: translateY(-1px); }
+  .glass-btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; border-color: transparent; }
+  .glass-btn.primary:hover { color: #fff; filter: brightness(1.06); box-shadow: 0 0 0 4px var(--accent-soft), var(--glass-shadow-lg); }
+  .glass-btn.ghost { background: var(--glass-soft); }
+
+  /* segmented control (radio-like) */
+  .segmented { display: inline-flex; padding: 4px; gap: 4px; background: var(--glass-soft); border: 1px solid var(--glass-border); border-radius: 999px; backdrop-filter: blur(10px); }
+  .segmented button { border: none; background: transparent; color: var(--text-soft); font-family: inherit; font-size: 12.5px; padding: 7px 14px; border-radius: 999px; cursor: pointer; transition: all .25s ease; }
+  .segmented button.active { background: var(--glass-strong); color: var(--accent-strong); box-shadow: var(--glass-shadow); font-weight: 600; }
+
+  /* range slider */
+  .slider-wrap { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2)); outline: none; cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; border: 1px solid var(--glass-border); box-shadow: 0 2px 8px rgba(31,45,80,.25); cursor: pointer;
+    transition: transform .2s ease;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.12); }
+  input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 1px solid var(--glass-border); box-shadow: 0 2px 8px rgba(31,45,80,.25); cursor: pointer; }
+  .slider-val { min-width: 64px; text-align: right; font-family: var(--num-font); font-weight: 650; color: var(--accent-strong); font-size: 14px; }
+
+  /* ===== result readout ===== */
+  .hero-result { text-align: left; padding: 6px 0 4px; }
+  .hero-label { font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
+  .hero-value { font-size: 40px; font-weight: 720; line-height: 1.05; color: var(--text); letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+  .hero-value .unit { font-size: 17px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+  .badge { display: inline-block; padding: 5px 13px; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: .06em; }
+  .badge.pass { background: var(--accent2-soft); color: var(--pass); }
+  .badge.fail { background: rgba(221,122,122,.16); color: var(--fail); }
+  .badge.neutral { background: var(--accent-soft); color: var(--accent-strong); }
+  .message { font-size: 13px; color: var(--text-soft); line-height: 1.7; margin-top: 14px; }
+
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: var(--radius-sm); overflow: hidden; margin-top: 14px; }
+  .metric { background: var(--glass-soft); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+  .metric span { font-size: 11.5px; color: var(--muted); }
+  .metric strong { font-size: 17px; font-weight: 680; color: var(--accent-strong); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .metric.full { grid-column: 1 / -1; }
+
+  .formula-box { background: var(--glass-soft); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 14px 16px; margin-top: 12px; }
+  .formula-box .ft { font-size: 11.5px; color: var(--muted); margin-bottom: 6px; letter-spacing: .04em; }
+  .formula { font-size: 14.5px; color: var(--text); line-height: 1.8; }
+  .formula sup { font-size: .72em; }
+  .formula sub { font-size: .72em; }
+  .math-var { font-style: italic; color: var(--accent-strong); }
+
+  /* decisions (maintainability) */
+  .decision { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--hairline); }
+  .decision:last-child { border-bottom: none; }
+  .decision strong { display: block; font-size: 13.5px; font-weight: 600; margin-bottom: 3px; }
+  .decision span { font-size: 12px; color: var(--text-soft); line-height: 1.6; }
+  .decision .status { flex: none; padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 650; }
+  .decision .status.pass { background: var(--accent2-soft); color: var(--pass); }
+  .decision .status.fail { background: rgba(221,122,122,.16); color: var(--fail); }
+  .decision .status.neutral { background: var(--accent-soft); color: var(--accent-strong); }
+
+  .warning { margin-top: 14px; font-size: 12px; color: var(--text-soft); background: var(--glass-soft); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 11px 13px; line-height: 1.65; }
+  .norm-chip { margin-top: 12px; font-size: 12px; padding: 10px 13px; border-radius: var(--radius-sm); font-variant-numeric: tabular-nums; }
+  .norm-chip.pass { background: var(--accent2-soft); color: var(--pass); }
+  .norm-chip.fail { background: rgba(221,122,122,.16); color: var(--fail); }
+
+  /* confidence bar */
+  .ci-bar { width: 100%; height: 70px; margin-top: 10px; }
+  .ci-bar svg { width: 100%; height: 100%; }
+  .ci-tick { stroke: var(--hairline); stroke-width: 1; }
+  .ci-band { fill: var(--accent-soft); }
+  .ci-point { stroke: var(--accent-strong); }
+  .ci-target { stroke: var(--warn); }
+
+  /* table */
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; }
+  th, td { text-align: left; padding: 9px 11px; border-bottom: 1px solid var(--hairline); font-variant-numeric: tabular-nums; }
+  th { color: var(--muted); font-weight: 600; }
+  tr.scan-selected { background: var(--accent-soft); }
+  .chi-pmf table { font-variant-numeric: tabular-nums; }
+  .chi-pmf-hl { background: var(--accent-soft); }
+
+  /* distribution chart */
+  .dist-svg { width: 100%; height: auto; display: block; }
+  .dist-grid { stroke: var(--hairline); stroke-width: 1; }
+  .dist-axis { stroke: var(--text-soft); stroke-width: 1.2; opacity: .6; }
+  .dist-tick { fill: var(--muted); font-size: 11px; font-family: var(--num-font); }
+  .dist-pdf-area { fill: url(#distPdfGrad); opacity: .9; }
+  .dist-pdf-line { fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linejoin: round; }
+  .dist-cdf-line { fill: none; stroke: var(--accent2); stroke-width: 2.4; stroke-linejoin: round; }
+  .dist-grad-top { stop-color: var(--accent); stop-opacity: .42; }
+  .dist-grad-bottom { stop-color: var(--accent); stop-opacity: 0; }
+  .dist-marker { stroke: var(--warn); stroke-width: 1.1; stroke-dasharray: 3 3; opacity: .8; }
+  .dist-marker-label { fill: var(--warn); font-size: 11px; font-family: var(--num-font); }
+  .dist-hover-line { stroke: var(--text-soft); stroke-width: 1; stroke-dasharray: 3 3; }
+  .dist-hover-dot { fill: var(--accent-strong); stroke: #fff; stroke-width: 1.5; }
+  .dist-hover-text { fill: var(--text); font-size: 11.5px; font-family: var(--num-font); paint-order: stroke; stroke: var(--glass); stroke-width: 3px; }
+  .dist-legend { display: flex; gap: 18px; margin-top: 10px; font-size: 12.5px; color: var(--text-soft); }
+  .lg-item { display: flex; align-items: center; gap: 7px; }
+  .lg-swatch { width: 14px; height: 14px; border-radius: 4px; }
+  .lg-swatch.pdf { background: var(--accent); }
+  .lg-swatch.cdf { background: var(--accent2); }
+
+  /* tabs for distributions */
+  .dist-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .dist-tab { border: 1px solid var(--glass-border); background: var(--glass-soft); color: var(--text-soft); font-family: inherit; font-size: 13px; padding: 9px 15px; border-radius: 999px; cursor: pointer; transition: all .25s ease; }
+  .dist-tab:hover { color: var(--text); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .dist-tab.active { background: var(--glass-strong); color: var(--accent-strong); font-weight: 600; box-shadow: var(--glass-shadow); }
+
+  /* overview hero */
+  .hero-banner { padding: 34px 34px 36px; margin-bottom: 18px; position: relative; overflow: hidden; }
+  .hero-banner h1 { margin: 0 0 10px; font-size: 28px; font-weight: 720; letter-spacing: -.01em; }
+  .hero-banner p { margin: 0; color: var(--text-soft); font-size: 14px; line-height: 1.7; max-width: 720px; }
+  .hero-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+  .pill { font-size: 12px; padding: 6px 13px; border-radius: 999px; background: var(--glass-soft); border: 1px solid var(--glass-border); color: var(--text-soft); }
+  .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+  .tool-card { padding: 20px; cursor: pointer; transition: all .28s ease; display: flex; flex-direction: column; gap: 10px; }
+  .tool-card:hover { transform: translateY(-3px); box-shadow: var(--glass-shadow-lg); }
+  .tool-card .tc-ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-strong); }
+  .tool-card .tc-ico svg { width: 22px; height: 22px; }
+  .tool-card h3 { margin: 0; font-size: 15px; font-weight: 650; }
+  .tool-card p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+
+  .section-title { font-size: 13px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin: 4px 2px 14px; }
+
+  /* modal */
+  .modal-mask { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; padding: 24px; background: rgba(20, 28, 44, 0.28); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); opacity: 0; transition: opacity .32s ease; }
+  .modal-mask.show { display: flex; opacity: 1; }
+  .modal-card { width: min(560px, 96vw); max-height: 86vh; overflow: auto; padding: 26px 28px; transform: scale(.96) translateY(8px); transition: transform .34s cubic-bezier(.2,.8,.25,1); }
+  .modal-mask.show .modal-card { transform: none; }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .modal-head h3 { margin: 0; font-size: 17px; font-weight: 680; }
+  .modal-body { font-size: 13px; }
+
+  .footer { text-align: center; color: var(--muted); font-size: 12px; padding: 28px 0 14px; position: relative; z-index: 1; }
+  .hidden { display: none !important; }
+
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 999px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+</style>
 </head>
 <body>
-  <main class="shell">
-    <header class="topbar">
-      <div class="brand">
-        <div class="mark" aria-hidden="true">
-          <svg viewBox="0 0 48 48" width="26" height="26" fill="none">
-            <rect x="6" y="6" width="36" height="36" rx="9" stroke="rgba(255,255,255,0.85)" stroke-width="2.4"/>
-            <path d="M16 24.5l6 6 11-13" stroke="rgba(255,255,255,0.95)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div>
-          <h1>GJB 8895 单侧置信下限计算器</h1>
-          <p class="subtitle">适用于 FDR、FIR、S-FDR、S-FIR 等成败型测试性指标评估</p>
-          <p class="org-slot">检测实验室 · 通用质量特性（六性）核算工具</p>
-        </div>
-      </div>
-      <div class="topbar-actions">
-        <div class="standard-chip">二项分布 · 单侧置信下限</div>
-        <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换明暗主题" title="切换明暗主题">
-          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <circle cx="12" cy="12" r="4.2"/>
-            <path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/>
-          </svg>
-          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 14.5A8 8 0 0 1 9.5 4 7 7 0 1 0 20 14.5Z"/>
-          </svg>
-        </button>
-      </div>
-    </header>
+  <div class="bg-blobs"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span></div>
+  <div id="loadingBar"></div>
 
-    <nav class="nav-tabs" aria-label="功能切换">
-      <button class="tab-button active" type="button" data-page="lowerPage">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 16l3.5-4.5L15 14l4-6"/></svg>
-        <span>单侧置信下限</span>
-      </button>
-      <button class="tab-button" type="button" data-page="schemePage">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6M9 12h6M9 15h3"/></svg>
-        <span>最低可接受值试验方案</span>
-      </button>
-      <button class="tab-button" type="button" data-page="maintainPage">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5 19 10 10 19l-4 1 1-4 9-10.5Z"/><path d="M12.5 7.5 16.5 11.5"/></svg>
-        <span>GJB 2072 方法9</span>
-      </button>
-      <button class="tab-button" type="button" data-page="chiPage">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M3 20c2 0 3-9 6-12s5-1 9 1"/></svg>
-        <span>卡方分布</span>
-      </button>
-      <button class="tab-button" type="button" data-page="distPage">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h18"/><path d="M5 19c2 0 3-11 7-11s5 11 7 11"/></svg>
-        <span>统计分布</span>
-      </button>
+  <!-- ===== Top Nav ===== -->
+  <header class="topnav glass">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 48 48" fill="none">
+        <defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a90d9"/><stop offset="1" stop-color="#46c4bd"/></linearGradient></defs>
+        <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#bg1)" opacity="0.15"/>
+        <path d="M10 30 Q18 12 24 24 T38 18" stroke="url(#bg1)" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+        <circle cx="24" cy="24" r="3.4" fill="#4a90d9"/>
+        <circle cx="38" cy="18" r="2.6" fill="#46c4bd"/>
+      </svg>
+      <div>
+        <div class="name">六性统计计算台</div>
+        <div class="sub">RELIABILITY · STAT TOOLKIT</div>
+      </div>
+    </div>
+    <nav class="top-cats">
+      <button class="top-cat active" data-cat="overview" type="button">概览</button>
+      <button class="top-cat" data-cat="reliability" type="button">可靠性</button>
+      <button class="top-cat" data-cat="distribution" type="button">分布</button>
+      <button class="top-cat" data-cat="maintain" type="button">维修性</button>
     </nav>
+    <div class="top-actions">
+      <button class="icon-btn" id="themeToggle" type="button" aria-label="切换明暗主题" title="切换明暗主题">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
+      </button>
+    </div>
+  </header>
 
-    <section class="page active" id="lowerPage">
-    <section class="main">
-      <section class="panel">
-        <div class="panel-header">
-          <h2 class="panel-title">试验数据输入</h2>
-          <div class="panel-note">失败数 F = 样本量 n - 成功数</div>
+  <div class="app">
+    <!-- ===== Sidebar ===== -->
+    <aside class="sidebar glass">
+      <div class="side-title">计算工具</div>
+      <button class="side-item active" data-cat="overview" data-view="overview" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
+        概览首页
+      </button>
+      <button class="side-item" data-cat="reliability" data-view="lower" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 4 5-7 4 5"/><path d="M3 21h18"/></svg>
+        单侧置信下限
+      </button>
+      <button class="side-item" data-cat="reliability" data-view="scheme" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M3 7l3 3"/><path d="M3 17l3-3"/></svg>
+        最低可接受试验方案
+      </button>
+      <button class="side-item" data-cat="distribution" data-view="chisq" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M3 20c2 0 3-9 6-12s5-1 9 1"/></svg>
+        卡方分布
+      </button>
+      <button class="side-item" data-cat="distribution" data-view="dist" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20V13"/></svg>
+        连续/离散分布
+      </button>
+      <button class="side-item" data-cat="distribution" data-view="sample" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+        样本数据导出
+      </button>
+      <button class="side-item" data-cat="maintain" data-view="maintain" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5 19 10 10 19l-4 1 1-4 9-10.5Z"/><path d="M12.5 7.5 16.5 11.5"/></svg>
+        GJB 2072 方法9
+      </button>
+    </aside>
+
+    <!-- ===== Main ===== -->
+    <main class="main-scroll">
+
+      <!-- Overview -->
+      <section class="view active" id="view-overview">
+        <div class="hero-banner glass">
+          <h1>可靠性数理统计计算台</h1>
+          <p>面向质量工程师、可靠性试验与数理统计科研人员的一体化工具。覆盖成败型与寿命型置信估计、试验方案设计、卡方与常见统计分布数值计算及可视化、维修性判决。全部计算在本地浏览器完成，数据不出本机。</p>
+          <div class="hero-pills">
+            <span class="pill">GJB 8895</span>
+            <span class="pill">GJB 2072-94 方法9</span>
+            <span class="pill">GJB 899A</span>
+            <span class="pill">Clopper-Pearson / Wilson</span>
+            <span class="pill">离线可用 · 零依赖</span>
+          </div>
         </div>
-
-        <form class="form" id="calcForm">
-          <div class="field-grid">
-            <div>
-              <label for="metric">指标类型</label>
-              <select id="metric">
-                <option value="FDR">故障检测率 FDR</option>
-                <option value="FIR">故障隔离率 FIR</option>
-                <option value="S-FDR">严重故障检测率 S-FDR</option>
-                <option value="S-FIR">严重故障隔离率 S-FIR</option>
-                <option value="测试性指标">其他测试性指标</option>
-              </select>
-            </div>
-            <div>
-              <label for="confidence">置信度 C</label>
-              <input id="confidence" type="text" value="80%" inputmode="decimal" autocomplete="off">
-              <div class="hint">可输入 0.8、80 或 80%</div>
-            </div>
+        <div class="section-title">计算工具</div>
+        <div class="tool-grid">
+          <div class="tool-card glass" data-view="lower">
+            <div class="tc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 4 5-7 4 5"/><path d="M3 21h18"/></svg></div>
+            <h3>单侧置信下限</h3>
+            <p>成败型（二项）FDR/FIR 等指标的 Clopper-Pearson 精确与 Wilson 近似置信下限，支持双侧与上限。</p>
           </div>
-
-          <div class="field-grid">
-            <div>
-              <label for="sampleSize">样本量 n</label>
-              <input id="sampleSize" type="number" min="1" step="1" value="65">
-            </div>
-            <div>
-              <label for="failures">失败数 F</label>
-              <input id="failures" type="number" min="0" step="1" value="2">
-            </div>
+          <div class="tool-card glass" data-view="scheme">
+            <div class="tc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M3 7l3 3"/></svg></div>
+            <h3>最低可接受试验方案</h3>
+            <p>给定最低可接受值 q₁、风险 β 与故障模式库数量 M，求解合格判定数 r* 与最小样本量 n。</p>
           </div>
-
-          <div class="field-grid">
-            <div>
-              <label for="target">最低可接受值</label>
-              <input id="target" type="text" value="90%" inputmode="decimal" autocomplete="off">
-              <div class="hint">留空则只计算，不做合格判定</div>
-            </div>
-            <div>
-              <label for="digits">结果小数位</label>
-              <select id="digits">
-                <option value="2">2 位</option>
-                <option value="3">3 位</option>
-                <option value="4" selected>4 位</option>
-                <option value="5">5 位</option>
-              </select>
-            </div>
+          <div class="tool-card glass" data-view="chisq">
+            <div class="tc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M3 20c2 0 3-9 6-12s5-1 9 1"/></svg></div>
+            <h3>卡方分布</h3>
+            <p>寿命型 MTBF 置信下限（指数 χ² 法）、正态方差区间、χ² 分位数与泊松可靠度。</p>
           </div>
-
-            <div class="field-grid">
-              <div>
-                <label for="method">计算方法</label>
-                <select id="method">
-                  <option value="exact">精确法 (Clopper-Pearson)</option>
-                  <option value="wilson">Wilson 近似区间</option>
-                </select>
-                <div class="hint">精确法为保守标准方法；Wilson 为常用近似，小样本更平滑</div>
-              </div>
-              <div>
-                <label for="intervalType">区间类型</label>
-                <select id="intervalType">
-                  <option value="lower">单侧下限</option>
-                  <option value="upper">单侧上限</option>
-                  <option value="two">双侧区间</option>
-                </select>
-                <div class="hint">默认单侧下限，与合格判定一致</div>
-              </div>
-            </div>
-
-            <div class="actions">
-              <button class="primary" type="submit">计算置信下限</button>
-            <button class="secondary" type="button" id="resetBtn">恢复示例</button>
+          <div class="tool-card glass" data-view="dist">
+            <div class="tc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20V13"/></svg></div>
+            <h3>连续 / 离散分布</h3>
+            <p>指数、正态、威布尔、二项、伽马分布的 PDF/CDF 公式与高级交互曲线绘图。</p>
           </div>
-        </form>
-      </section>
-
-      <section class="panel">
-        <div class="panel-header">
-          <h2 class="panel-title">计算结果</h2>
-          <div class="panel-note" id="metricName">FDR</div>
-        </div>
-
-        <div class="result-card">
-          <div class="hero-result">
-              <div>
-                <div class="result-label" id="lowerLabel">单侧置信下限</div>
-                <div class="result-value" id="lowerBound">93.5316%</div>
-              </div>
-            <div class="badge pass" id="conclusion">PASS</div>
+          <div class="tool-card glass" data-view="sample">
+            <div class="tc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></div>
+            <h3>样本数据导出</h3>
+            <p>粘贴试验样本，一键统计描述量并导出为 CSV，便于归档与采信。</p>
           </div>
-
-          <div class="metrics">
-            <div class="metric">
-              <span>点估计</span>
-              <strong id="pointEstimate">96.9231%</strong>
-            </div>
-            <div class="metric">
-              <span>成功数</span>
-              <strong id="successes">63</strong>
-            </div>
-            <div class="metric">
-              <span>失败数</span>
-              <strong id="failureCount">2</strong>
-            </div>
-            <div class="metric">
-              <span>置信度</span>
-              <strong id="confidenceOut">80.0000%</strong>
-            </div>
-          </div>
-
-            <div class="ci-bar" id="ciBar" aria-label="置信区间可视化"></div>
-
-            <div class="formula">
-              <math display="block" aria-label="GJB 8895 single-sided confidence lower bound equation">
-              <mrow>
-                <munderover>
-                  <mo>&#x2211;</mo>
-                  <mrow>
-                    <mi>i</mi>
-                    <mo>=</mo>
-                    <mn>0</mn>
-                  </mrow>
-                  <mi>F</mi>
-                </munderover>
-                <msubsup>
-                  <mi>C</mi>
-                  <mi>n</mi>
-                  <mi>i</mi>
-                </msubsup>
-                <msup>
-                  <mi>P</mi>
-                  <mrow>
-                    <mi>n</mi>
-                    <mo>-</mo>
-                    <mi>i</mi>
-                  </mrow>
-                </msup>
-                <msup>
-                  <mrow>
-                    <mo>(</mo>
-                    <mn>1</mn>
-                    <mo>-</mo>
-                    <mi>P</mi>
-                    <mo>)</mo>
-                  </mrow>
-                  <mi>i</mi>
-                </msup>
-                <mo>=</mo>
-                <mn>1</mn>
-                <mo>-</mo>
-                <mi>C</mi>
-              </mrow>
-            </math>
-            <div class="formula-caption">其中 P 为待求单侧置信下限，F 为失败数，n 为样本量，C 为置信度</div>
-          </div>
-
-          <div class="message" id="message">
-            当前 FDR 单侧置信下限为 93.5316%，不低于最低可接受值 90.0000%，判定为通过。
-          </div>
-
-          <div class="footer">
-            说明：本工具采用成败型二项分布模型，通过二分法求解 P。输入的失败数 F 表示未检测、未隔离或未达到规定要求的样本数。
+          <div class="tool-card glass" data-view="maintain">
+            <div class="tc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5 19 10 10 19l-4 1 1-4 9-10.5Z"/></svg></div>
+            <h3>GJB 2072 方法9</h3>
+            <p>维修性验证 A52–A55：平均/最大修复时间判决，小样本 t 分布与对数正态 KS 检验。</p>
           </div>
         </div>
       </section>
-    </section>
-    </section>
 
-    <section class="page" id="schemePage">
-      <section class="main wide-main">
-        <section class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">最低可接受值试验方案</h2>
-            <div class="panel-note">只考虑订购方风险 β 与最低可接受值 <span class="math-var">q<sub>1</sub></span></div>
-          </div>
-
-          <form class="form" id="schemeForm">
-            <div class="formula">
-              <math display="block" aria-label="Minimum acceptable value test plan equation">
-                <mrow>
-                  <munderover>
-                    <mo>&#x2211;</mo>
-                    <mrow>
-                      <mi>d</mi>
-                      <mo>=</mo>
-                      <mn>0</mn>
-                    </mrow>
-                    <mi>r</mi>
-                  </munderover>
-                  <msubsup>
-                    <mi>C</mi>
-                    <mi>n</mi>
-                    <mi>d</mi>
-                  </msubsup>
-                  <msubsup>
-                    <mi>q</mi>
-                    <mn>1</mn>
-                    <mrow>
-                      <mi>n</mi>
-                      <mo>-</mo>
-                      <mi>d</mi>
-                    </mrow>
-                  </msubsup>
-                  <msup>
-                    <mrow>
-                      <mo>(</mo>
-                      <mn>1</mn>
-                      <mo>-</mo>
-                      <msub>
-                        <mi>q</mi>
-                        <mn>1</mn>
-                      </msub>
-                      <mo>)</mo>
-                    </mrow>
-                    <mi>d</mi>
-                  </msup>
-                  <mo>&#x2264;</mo>
-                  <mi>&#x03B2;</mi>
-                </mrow>
-              </math>
-              <div class="formula-caption">其中 r 为合格判定数，n 为样本量，<span class="math-var">q<sub>1</sub></span> 为测试性指标最低可接受值，β 为订购方风险</div>
-            </div>
-
-            <div class="field-grid">
-              <div>
-                <label for="q1Input">最低可接受值 <span class="math-var">q<sub>1</sub></span></label>
-                <input id="q1Input" type="text" value="90%" inputmode="decimal" autocomplete="off">
-                <div class="hint">可输入 0.9、90 或 90%</div>
-              </div>
-              <div>
-                <label for="betaInput">订购方风险 β</label>
-                <input id="betaInput" type="text" value="10%" inputmode="decimal" autocomplete="off">
-                <div class="hint">示例表 J.2 对应 β = 0.1</div>
-              </div>
-            </div>
-
-            <div class="field-grid">
-              <div>
-                <label for="mInput">故障模式库数量 <span class="math-var">M</span></label>
-                <input id="mInput" type="number" min="0" step="1" value="30">
-                <div class="hint">合格判定数 r 从 0 自增，取第一个使最小样本量 &gt; M 的方案</div>
-              </div>
-              <div>
-                <label for="maxSearchN">最大搜索样本量 <span class="math-var">N<sub>max</sub></span></label>
-                <input id="maxSearchN" type="number" min="1" step="1" value="10000">
-                <div class="hint">搜索上限，超出仍未找到解将提示无解</div>
-              </div>
-            </div>
-
-            <div class="actions">
-              <button class="primary" type="submit">求解试验方案</button>
-              <button class="secondary" type="button" id="schemeResetBtn">恢复示例</button>
-            </div>
-          </form>
-        </section>
-
-        <section class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">求解结果与方案表</h2>
-            <div class="panel-note" id="schemeBetaName">β = 10.0000%</div>
-          </div>
-
-          <div class="result-card">
-            <div class="scheme-result">
-              <div class="result-emphasis">
-                <span>最小样本量 n</span>
-                <strong id="schemeN">--</strong>
-              </div>
-              <div class="metric">
-                <span>选定合格判定数 <span class="math-var">r*</span></span>
-                <strong id="schemeR">--</strong>
-              </div>
-              <div class="metric">
-                <span>故障模式库数量 <span class="math-var">M</span></span>
-                <strong id="schemeM">--</strong>
-              </div>
-              <div class="metric">
-                <span><span class="math-var">q<sub>1</sub></span></span>
-                <strong id="schemeQ1">90.0000%</strong>
-              </div>
-              <div class="metric">
-                <span>β</span>
-                <strong id="schemeBeta">10.0000%</strong>
-              </div>
-            </div>
-
-            <div class="message" id="schemeMessage">
-              请输入参数并点击「求解试验方案」。
-            </div>
-
-            <div class="table-toolbar">
-              <h3 class="table-title">扫描轨迹表（r 自增，直至最小样本量 &gt; M）</h3>
-              <div class="panel-note">逐行展示 r = 0, 1, 2, … 的最小样本量 <span class="math-var">n<sub>min</sub>(r)</span></div>
-            </div>
-            <div class="table-wrap">
-              <table class="scheme-table" id="schemeTable"></table>
-            </div>
-
-            <div class="footer">
-              说明：合格判定数 <span class="math-var">r</span> 从 0 起逐次增大，取第一个使最小样本量 <span class="math-var">n<sub>min</sub>(r)</span> 大于故障模式库数量 <span class="math-var">M</span> 的方案 (<span class="math-var">r*</span>, <span class="math-var">n<sub>min</sub>(r*)</span>)。试验中失败样本次数不大于 <span class="math-var">r*</span> 判为合格。
-            </div>
-          </div>
-        </section>
-      </section>
-    </section>
-
-    <section class="page" id="maintainPage">
-      <section class="main wide-main">
-        <section class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">维修时间数据填写</h2>
-            <div class="panel-note">GJB 2072-94 附录A 试验方法9</div>
-          </div>
-
-          <form class="form compact-form" id="maintainForm">
-            <div class="field-grid">
-              <div>
-                <label for="correctiveTimes">修复性维修时间 <span class="math-var">X<sub>cti</sub></span></label>
-                <textarea id="correctiveTimes" placeholder="每行或用逗号输入一个维修时间，例如：&#10;18, 22, 16, 25, 20"></textarea>
-                <div class="hint">用于平均修复时间、平均维修时间、最大修复时间检验；最大修复时间要求数据均大于 0。</div>
-                <div class="data-actions">
-                  <button class="mini-button" type="button" id="loadMaintainSample">载入示例数据</button>
-                  <button class="mini-button" type="button" id="clearMaintainData">清空数据</button>
-                </div>
-              </div>
-              <div>
-                <label for="preventiveTimes">预防性维修时间 <span class="math-var">X<sub>pti</sub></span></label>
-                <textarea id="preventiveTimes" placeholder="如需检验平均预防性维修时间或平均维修时间，在此输入预防性维修样本"></textarea>
-                <div class="hint">检验预防性维修参数时，标准要求另附加 30 个预防性维修作业样本。</div>
-              </div>
-            </div>
-
-            <div class="field-grid">
-              <div>
-                <label for="betaMaintain">订购方风险 β</label>
-                <input id="betaMaintain" type="text" value="10%" inputmode="decimal" autocomplete="off">
-              </div>
-              <div>
-                <label for="percentileMaintain">最大修复时间百分位 p</label>
-                <input id="percentileMaintain" type="text" value="95%" inputmode="decimal" autocomplete="off">
-              </div>
-            </div>
-
-            <div class="field-grid">
-              <div>
-                <label for="fcInput">修复性维修频数 fc</label>
-                <input id="fcInput" type="number" min="0" step="0.0001" value="1">
-              </div>
-              <div>
-                <label for="fpInput">预防性维修频数 fp</label>
-                <input id="fpInput" type="number" min="0" step="0.0001" value="1">
-              </div>
-            </div>
-
-            <div class="field-grid">
-              <div>
-                <label for="mctInput"><span class="math-var">M<sub>ct</sub></span> 平均修复时间要求</label>
-                <input id="mctInput" type="number" min="0" step="0.0001" value="30">
-              </div>
-              <div>
-                <label for="mptInput"><span class="math-var">M<sub>pt</sub></span> 平均预防性维修时间要求</label>
-                <input id="mptInput" type="number" min="0" step="0.0001" value="25">
-              </div>
-            </div>
-
-            <div class="field-grid">
-              <div>
-                <label for="mpcInput"><span class="math-var">M<sub>p/c</sub></span> 平均维修时间要求</label>
-                <input id="mpcInput" type="number" min="0" step="0.0001" value="28">
-              </div>
-              <div>
-                <label for="mmaxInput"><span class="math-var">M<sub>maxct</sub></span> 最大修复时间要求</label>
-                <input id="mmaxInput" type="number" min="0" step="0.0001" value="55">
-              </div>
-            </div>
-
-            <div class="actions">
-              <button class="primary" type="submit">计算维修性判决</button>
-              <button class="secondary" type="button" id="maintainResetBtn">恢复默认</button>
-            </div>
-          </form>
-        </section>
-
-        <section class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">统计量与判决条件</h2>
-            <div class="panel-note" id="maintainRiskName">β = 10.0000%</div>
-          </div>
-
-          <div class="result-card">
-            <div class="formula-list">
-              <div class="formula-mini">
-                <math display="block">
-                  <mrow>
-                    <mover><mi>X</mi><mo>_</mo></mover><msub><mi></mi><mi>ct</mi></msub>
-                    <mo>=</mo>
-                    <mfrac><mn>1</mn><msub><mi>n</mi><mi>c</mi></msub></mfrac>
-                    <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><msub><mi>n</mi><mi>c</mi></msub></munderover>
-                    <msub><mi>X</mi><mrow><mi>cti</mi></mrow></msub>
-                    <mo>,</mo>
-                    <msubsup><mi>d</mi><mi>ct</mi><mn>2</mn></msubsup>
-                    <mo>=</mo>
-                    <mfrac><mn>1</mn><mrow><msub><mi>n</mi><mi>c</mi></msub><mo>-</mo><mn>1</mn></mrow></mfrac>
-                    <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><msub><mi>n</mi><mi>c</mi></msub></munderover>
-                    <msup><mrow><mo>(</mo><msub><mi>X</mi><mi>cti</mi></msub><mo>-</mo><mover><msub><mi>X</mi><mi>ct</mi></msub><mo>_</mo></mover><mo>)</mo></mrow><mn>2</mn></msup>
-                  </mrow>
-                </math>
-              </div>
-              <div class="formula-mini">
-                <math display="block">
-                  <mrow>
-                    <mover><msub><mi>X</mi><mrow><mi>p/c</mi></mrow></msub><mo>_</mo></mover>
-                    <mo>=</mo>
-                    <mfrac>
-                      <mrow><msub><mi>f</mi><mi>c</mi></msub><mover><msub><mi>X</mi><mi>ct</mi></msub><mo>_</mo></mover><mo>+</mo><msub><mi>f</mi><mi>p</mi></msub><mover><msub><mi>X</mi><mi>pt</mi></msub><mo>_</mo></mover></mrow>
-                      <mrow><msub><mi>f</mi><mi>c</mi></msub><mo>+</mo><msub><mi>f</mi><mi>p</mi></msub></mrow>
-                    </mfrac>
-                  </mrow>
-                </math>
-              </div>
-              <div class="formula-mini">
-                <math display="block">
-                  <mrow>
-                    <msub><mi>X</mi><mrow><mi>maxct</mi></mrow></msub>
-                    <mo>=</mo>
-                    <mi>exp</mi>
-                    <mo>{</mo>
-                    <mover><mrow><mi>ln</mi><msub><mi>X</mi><mi>ct</mi></msub></mrow><mo>_</mo></mover>
-                    <mo>+</mo>
-                    <mi>&#x03C8;</mi><msub><mi>s</mi><mrow><mi>lnX</mi></mrow></msub>
-                    <mo>}</mo>
-                  </mrow>
-                </math>
-              </div>
-            </div>
-
-            <div class="scheme-result">
-              <div class="metric">
-                <span>nc / np</span>
-                <strong id="maintainCounts">0 / 0</strong>
-              </div>
-              <div class="metric">
-                <span>平均修复时间</span>
-                <strong id="ctMean">--</strong>
-              </div>
-              <div class="metric">
-                <span>修复时间方差</span>
-                <strong id="ctVariance">--</strong>
-              </div>
-              <div class="metric">
-                <span>平均预防性维修时间</span>
-                <strong id="ptMean">--</strong>
-              </div>
-              <div class="metric">
-                <span>预防性维修时间方差</span>
-                <strong id="ptVariance">--</strong>
-              </div>
-              <div class="metric">
-                <span>平均维修时间</span>
-                <strong id="pcMean">--</strong>
-              </div>
-              <div class="metric">
-                <span>最大修复时间估计</span>
-                <strong id="maxCtEstimate">--</strong>
-              </div>
-              <div class="metric">
-                <span>风险 Z 值</span>
-                <strong id="maintainZ">--</strong>
-              </div>
-              <div class="metric">
-                <span>百分位 Z 值</span>
-                <strong id="maintainZp">--</strong>
-              </div>
-              <div class="metric">
-                <span>ψ</span>
-                <strong id="maintainPsi">--</strong>
-              </div>
-            </div>
-
-            <div class="warning" id="maintainWarning">样本量最小为 30。请输入维修时间数据后计算。</div>
-
-            <div class="norm-chip" id="normChip" hidden></div>
-
-            <div class="export-bar">
-              <span class="export-label">判决结果导出</span>
-              <button class="mini-button" type="button" id="copyMaintain">复制文本</button>
-              <button class="mini-button" type="button" id="csvMaintain">导出 CSV</button>
-            </div>
-
-            <div class="decision-list" id="maintainDecisions"></div>
-
-            <div class="footer">
-              判决规则按截图 A52-A55：样本统计量不大于合同规定值扣除风险裕量后的判决限，则接受；否则拒绝。最大修复时间按对数正态分布估计，A55 取 p 分位数上(1-β)置信限（保守估计）。
-            </div>
-          </div>
-        </section>
-      </section>
-    </section>
-
-    <section class="page" id="chiPage">
-      <section class="main">
-        <section class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">卡方分布计算</h2>
-            <div class="panel-note">指数寿命型可靠性验证 · 正态方差置信区间 · χ² 分位数</div>
-          </div>
-          <form class="form" id="chiForm">
-            <div class="chi-mode-row">
-              <label for="chiMode">计算模式</label>
-              <select id="chiMode">
-                <option value="mtbf">寿命型 MTBF 置信下限（指数分布 χ² 法）</option>
-                <option value="variance">正态方差 σ² 置信区间（χ² 法）</option>
-                <option value="quantile">χ² 分位数 / 临界值查询</option>
-                <option value="poisson">泊松分布：概率与可靠度</option>
-              </select>
-            </div>
-            <div class="field-grid">
-              <div>
-                <label for="chiDigits">结果小数位</label>
-                <select id="chiDigits">
-                  <option value="2">2 位</option>
-                  <option value="3">3 位</option>
-                  <option value="4" selected>4 位</option>
-                  <option value="5">5 位</option>
-                </select>
-              </div>
-            </div>
-
-            <div id="chiMtbfGroup">
+      <!-- 单侧置信下限 -->
+      <section class="view" id="view-lower">
+        <div class="grid cols-3">
+          <div class="card glass">
+            <div class="card-head"><div><div class="card-title">参数输入</div><div class="card-sub">成败型二项置信估计</div></div></div>
+            <form id="calcForm">
               <div class="field-grid">
-                <div>
-                  <label for="chiT">总试验时间 T</label>
-                  <input id="chiT" type="number" min="0" step="any" value="1000">
-                  <div class="hint">多台累计时间（台·h），与 MTBF 同单位</div>
+                <div class="field full">
+                  <label for="metric">评价指标</label>
+                  <select id="metric">
+                    <option value="FDR">故障检测率 FDR</option>
+                    <option value="FIR">故障隔离率 FIR</option>
+                    <option value="S-FDR">遥测故障检测率 S-FDR</option>
+                    <option value="S-FIR">遥测故障隔离率 S-FIR</option>
+                  </select>
                 </div>
-                <div>
-                  <label for="chir">失效数 r（整数 ≥ 0）</label>
-                  <input id="chir" type="number" min="0" step="1" value="0">
+                <div class="field"><label for="sampleSize">样本量 n</label><input id="sampleSize" type="number" min="1" step="1" value="65"></div>
+                <div class="field"><label for="failures">失败数 F</label><input id="failures" type="number" min="0" step="1" value="2"></div>
+                <div class="field"><label for="confidence">置信度 C</label><input id="confidence" type="text" value="80%"></div>
+                <div class="field"><label for="target">最低可接受值</label><input id="target" type="text" value="90%"></div>
+                <div class="field"><label for="method">计算方法</label>
+                  <select id="method"><option value="exact">Clopper-Pearson 精确</option><option value="wilson">Wilson 近似</option></select>
                 </div>
-              </div>
-              <div class="field-grid">
-                <div>
-                  <label for="chiConf">置信度 C</label>
-                  <input id="chiConf" type="text" value="80%" inputmode="decimal" autocomplete="off">
+                <div class="field"><label for="intervalType">区间类型</label>
+                  <select id="intervalType"><option value="lower">单侧下限</option><option value="upper">单侧上限</option><option value="two">双侧</option></select>
                 </div>
-                <div>
-                  <label for="chiTmission">任务时间 t（可选）</label>
-                  <input id="chiTmission" type="number" min="0" step="any" value="100">
-                  <div class="hint">填写则同时给出可靠度下限 R<sub>L</sub>(t)</div>
-                </div>
-              </div>
-            </div>
-
-            <div id="chiVarGroup" hidden>
-              <div class="field-grid">
-                <div>
-                  <label for="chiN">样本量 n</label>
-                  <input id="chiN" type="number" min="2" step="1" value="20">
-                </div>
-                <div>
-                  <label for="chiS">样本标准差 s</label>
-                  <input id="chiS" type="number" min="0" step="any" value="2.5">
+                <div class="field"><label for="digits">结果小数位</label>
+                  <select id="digits"><option value="2">2 位</option><option value="3">3 位</option><option value="4" selected>4 位</option><option value="5">5 位</option></select>
                 </div>
               </div>
-              <div class="field-grid">
-                <div>
-                  <label for="chiVarConf">置信度 C</label>
-                  <input id="chiVarConf" type="text" value="90%" inputmode="decimal" autocomplete="off">
-                  <div class="hint">用于 σ² 的双侧置信区间</div>
-                </div>
-                <div></div>
+              <div class="btn-row">
+                <button class="glass-btn primary" type="submit">计算</button>
+                <button class="glass-btn ghost" id="resetBtn" type="button">重置</button>
               </div>
-            </div>
-
-            <div id="chiQuantGroup" hidden>
-              <div class="field-grid">
-                <div>
-                  <label for="chiK">自由度 k</label>
-                  <input id="chiK" type="number" min="1" step="1" value="10">
-                </div>
-                <div>
-                  <label for="chiP">累积概率 p（CDF）</label>
-                  <input id="chiP" type="text" value="0.95" inputmode="decimal" autocomplete="off">
-                  <div class="hint">上侧 α 对应 p = 1 − α（如 α=0.05 → p=0.95）</div>
-                </div>
-              </div>
-            </div>
-
-            <div id="chiPoissonGroup" hidden>
-              <div class="field-grid">
-                <div>
-                  <label for="chiLambda">平均发生率 λ</label>
-                  <input id="chiLambda" type="number" min="0" step="any" value="0.001">
-                  <div class="hint">单位时间内的期望故障数（如 次/h，λ=1/MTBF）</div>
-                </div>
-                <div>
-                  <label for="chiTp">任务时间 t</label>
-                  <input id="chiTp" type="number" min="0" step="any" value="100">
-                  <div class="hint">与 λ 同单位（如 h）</div>
-                </div>
-              </div>
-              <div class="field-grid">
-                <div>
-                  <label for="chiM">允许故障数 m（可选）</label>
-                  <input id="chiM" type="number" min="0" step="1" value="1">
-                  <div class="hint">填写则给出任务成功概率 P(X≤m)</div>
-                </div>
-                <div></div>
-              </div>
-            </div>
-
-            <div class="actions">
-              <button class="primary" type="submit">计算</button>
-              <button class="secondary" type="button" id="chiResetBtn">恢复示例</button>
-            </div>
-          </form>
-        </section>
-
-        <section class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">计算结果</h2>
-            <div class="panel-note" id="chiModeName">寿命型 MTBF 置信下限（指数分布 χ² 法）</div>
+            </form>
           </div>
-          <div class="result-card">
+
+          <div class="card glass" id="lowerResult">
+            <div class="card-head"><div><div class="card-title">计算结果</div><div class="card-sub" id="metricName">FDR</div></div><span class="badge neutral" id="conclusion">CALC</span></div>
             <div class="hero-result">
-              <div>
-                <div class="result-label" id="chiHeroLabel">MTBF 置信下限 θ<sub>L</sub></div>
-                <div class="result-value" id="chiHero">—</div>
+              <div class="hero-label" id="lowerLabel">单侧置信下限</div>
+              <div class="hero-value" id="lowerBound">—</div>
+            </div>
+            <div class="metrics">
+              <div class="metric"><span>点估计</span><strong id="pointEstimate">—</strong></div>
+              <div class="metric"><span>成功数</span><strong id="successes">—</strong></div>
+              <div class="metric"><span>失败数</span><strong id="failureCount">—</strong></div>
+              <div class="metric"><span>置信度</span><strong id="confidenceOut">—</strong></div>
+            </div>
+            <div class="message" id="message"></div>
+            <div class="btn-row">
+              <button class="glass-btn" type="button" data-modal-title="单侧置信下限 · 结果详情" data-modal-src="#lowerResult">弹窗查看</button>
+            </div>
+          </div>
+
+          <div class="card glass">
+            <div class="card-head"><div><div class="card-title">置信区间可视化</div><div class="card-sub">置信带 · 点估计 · 目标线</div></div></div>
+            <div class="ci-bar" id="ciBar"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 最低可接受试验方案 -->
+      <section class="view" id="view-scheme">
+        <div class="grid cols-2">
+          <div class="card glass">
+            <div class="card-head"><div><div class="card-title">参数输入</div><div class="card-sub">GJB 8895 最低可接受值试验方案</div></div></div>
+            <form id="schemeForm">
+              <div class="field-grid">
+                <div class="field"><label for="q1Input">最低可接受值 q₁</label><input id="q1Input" type="text" value="90%"></div>
+                <div class="field"><label for="betaInput">订购方风险 β</label><input id="betaInput" type="text" value="10%"></div>
+                <div class="field"><label for="mInput">故障模式库数量 M</label><input id="mInput" type="number" min="0" step="1" value="30"></div>
+                <div class="field"><label for="maxSearchN">最大搜索样本量</label><input id="maxSearchN" type="number" min="1" step="1" value="10000"></div>
               </div>
-              <div class="badge neutral" id="chiBadge">CALC</div>
+              <div class="btn-row">
+                <button class="glass-btn primary" type="submit">计算方案</button>
+                <button class="glass-btn ghost" id="schemeResetBtn" type="button">重置</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card glass" id="schemeResult">
+            <div class="card-head"><div><div class="card-title">计算结果</div><div class="card-sub" id="schemeBetaName">β = 10.0000%</div></div></div>
+            <div class="hero-result">
+              <div class="hero-label">推荐合格判定数 r* / 最小样本量 n</div>
+              <div class="hero-value"><span id="schemeR">—</span><span class="unit">/</span><span id="schemeN">—</span></div>
+            </div>
+            <div class="metrics">
+              <div class="metric"><span>q₁</span><strong id="schemeQ1">—</strong></div>
+              <div class="metric"><span>β</span><strong id="schemeBeta">—</strong></div>
+              <div class="metric full"><span>故障模式库数量 M</span><strong id="schemeM">—</strong></div>
+            </div>
+            <div class="message" id="schemeMessage"></div>
+            <div class="btn-row">
+              <button class="glass-btn" type="button" data-modal-title="最低可接受试验方案 · 文本预览" data-modal-src="#schemeResult">弹窗查看</button>
+            </div>
+          </div>
+
+          <div class="card glass" style="grid-column: 1 / -1;">
+            <div class="card-head"><div><div class="card-title">扫描轨迹 · 试验方案文本预览</div><div class="card-sub">r 自 0 递增，首个使 n_min(r) &gt; M 的方案</div></div></div>
+            <table id="schemeTable"><tbody><tr><td>等待计算…</td></tr></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 卡方分布 -->
+      <section class="view" id="view-chisq">
+        <div class="grid cols-2">
+          <div class="card glass">
+            <div class="card-head"><div><div class="card-title">卡方分布 · 参数输入</div></div></div>
+            <form id="chiForm">
+              <div class="field full" style="margin-bottom:16px;">
+                <label for="chiMode">计算模式</label>
+                <select id="chiMode">
+                  <option value="mtbf">寿命型 MTBF 置信下限（指数分布 χ² 法）</option>
+                  <option value="variance">正态方差 σ² 置信区间（χ² 法）</option>
+                  <option value="quantile">χ² 分位数 / 临界值查询</option>
+                  <option value="poisson">泊松分布：概率与可靠度</option>
+                </select>
+              </div>
+              <div class="field-grid">
+                <div id="chiMtbfGroup">
+                  <div class="field"><label for="chiT">总试验时间 T</label><input id="chiT" type="number" step="any" value="1000"></div>
+                  <div class="field"><label for="chir">失效数 r</label><input id="chir" type="number" min="0" step="1" value="0"></div>
+                  <div class="field"><label for="chiConf">置信度 C</label><input id="chiConf" type="text" value="80%"></div>
+                  <div class="field"><label for="chiTmission">任务时间 t（可选）</label><input id="chiTmission" type="number" step="any" value="100"></div>
+                </div>
+                <div id="chiVarGroup" hidden>
+                  <div class="field"><label for="chiN">样本量 n</label><input id="chiN" type="number" min="2" step="1" value="20"></div>
+                  <div class="field"><label for="chiS">样本标准差 s</label><input id="chiS" type="number" step="any" value="2.5"></div>
+                  <div class="field"><label for="chiVarConf">置信度 C</label><input id="chiVarConf" type="text" value="90%"></div>
+                </div>
+                <div id="chiQuantGroup" hidden>
+                  <div class="field"><label for="chiK">自由度 k</label><input id="chiK" type="number" min="1" step="1" value="10"></div>
+                  <div class="field"><label for="chiP">累积概率 p（CDF）</label><input id="chiP" type="text" value="0.95"></div>
+                </div>
+                <div id="chiPoissonGroup" hidden>
+                  <div class="field"><label for="chiLambda">平均发生率 λ</label><input id="chiLambda" type="number" step="any" value="0.001"></div>
+                  <div class="field"><label for="chiTp">任务时间 t</label><input id="chiTp" type="number" step="any" value="100"></div>
+                  <div class="field"><label for="chiM">允许故障数 m（可选）</label><input id="chiM" type="number" min="0" step="1" value="1"></div>
+                </div>
+                <div class="field"><label for="chiDigits">结果小数位</label>
+                  <select id="chiDigits"><option value="2">2 位</option><option value="3">3 位</option><option value="4" selected>4 位</option><option value="5">5 位</option></select>
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="glass-btn primary" type="submit">计算</button>
+                <button class="glass-btn ghost" id="chiResetBtn" type="button">重置</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card glass" id="chiResult">
+            <div class="card-head"><div><div class="card-title" id="chiModeName">寿命型 MTBF 置信下限</div></div><span class="badge neutral" id="chiBadge">CALC</span></div>
+            <div class="hero-result">
+              <div class="hero-label" id="chiHeroLabel">MTBF 置信下限 θ<sub>L</sub></div>
+              <div class="hero-value" id="chiHero">—</div>
             </div>
             <div class="metrics" id="chiMetrics"></div>
+            <div class="norm-chip hidden" id="normChip"></div>
+            <div class="warning" id="chiWarn"></div>
             <div class="chi-pmf" id="chiPmf" hidden></div>
-            <div class="warning" id="chiWarn" hidden></div>
-          </div>
-        </section>
-      </section>
-    </section>
-
-    <section class="page" id="distPage">
-      <section class="main">
-        <section class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">统计分布</h2>
-            <div class="panel-note">指数分布 · 正态分布 · 威布尔分布 — 密度函数、累计概率函数与分布曲线</div>
-          </div>
-
-          <div class="dist-tabs" id="distTabs">
-            <button class="dist-tab active" type="button" data-dist="exp">指数分布</button>
-            <button class="dist-tab" type="button" data-dist="norm">正态分布</button>
-            <button class="dist-tab" type="button" data-dist="weib">威布尔分布</button>
-          </div>
-
-          <div class="dist-body">
-            <div class="dist-side">
-              <div class="dist-params" id="distParams"></div>
-
-              <div class="formula-block">
-                <div class="formula-title">概率密度函数 PDF</div>
-                <div class="formula" id="distPdfFormula"></div>
-              </div>
-              <div class="formula-block">
-                <div class="formula-title">累计概率函数 CDF</div>
-                <div class="formula" id="distCdfFormula"></div>
-              </div>
-              <div class="formula-block" id="distExtraBlock" hidden>
-                <div class="formula-title" id="distExtraTitle"></div>
-                <div class="formula" id="distExtraFormula"></div>
-              </div>
-            </div>
-
-            <div class="dist-chart-wrap">
-              <div class="dist-chart-toolbar">
-                <div class="dist-toggle" id="distViewToggle">
-                  <button type="button" data-view="pdf" class="active">PDF</button>
-                  <button type="button" data-view="cdf">CDF</button>
-                  <button type="button" data-view="both">两者</button>
-                </div>
-              </div>
-              <div class="dist-chart" id="distChart"></div>
-              <div class="dist-legend" id="distLegend"></div>
+            <div class="btn-row">
+              <button class="glass-btn" type="button" data-modal-title="卡方分布 · 结果详情" data-modal-src="#chiResult">弹窗查看</button>
             </div>
           </div>
-        </section>
+        </div>
       </section>
-    </section>
-  </main>
+
+      <!-- 连续/离散分布 -->
+      <section class="view" id="view-dist">
+        <div class="grid cols-3">
+          <div class="card glass">
+            <div class="card-head"><div><div class="card-title">分布与参数</div><div class="card-sub">选择分布并调整参数</div></div></div>
+            <div class="dist-tabs" id="distTabs">
+              <button class="dist-tab active" data-dist="exp" type="button">指数</button>
+              <button class="dist-tab" data-dist="norm" type="button">正态</button>
+              <button class="dist-tab" data-dist="weib" type="button">威布尔</button>
+              <button class="dist-tab" data-dist="binom" type="button">二项</button>
+              <button class="dist-tab" data-dist="gamma" type="button">伽马</button>
+            </div>
+            <div id="distParams"></div>
+            <div class="field full" style="margin-top:16px;">
+              <label>参数滑块（拖动实时刷新曲线）</label>
+              <div class="slider-wrap">
+                <input type="range" id="distSlider" min="0.1" max="3" step="0.05" value="0.5">
+                <span class="slider-val" id="distSliderVal">0.50</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card glass">
+            <div class="card-head"><div><div class="card-title">概率密度与累积函数</div></div></div>
+            <div class="formula-box">
+              <div class="ft">概率密度函数 PDF</div>
+              <div class="formula" id="distPdfFormula"></div>
+            </div>
+            <div class="formula-box">
+              <div class="ft">累计概率函数 CDF</div>
+              <div class="formula" id="distCdfFormula"></div>
+            </div>
+            <div class="formula-box" id="distExtraBlock">
+              <div class="ft" id="distExtraTitle"></div>
+              <div class="formula" id="distExtraFormula"></div>
+            </div>
+          </div>
+
+          <div class="card glass">
+            <div class="card-head">
+              <div><div class="card-title">分布可视化曲线</div></div>
+              <div class="segmented" id="distViewToggle">
+                <button data-view="pdf" class="active" type="button">PDF</button>
+                <button data-view="cdf" type="button">CDF</button>
+                <button data-view="both" type="button">两者</button>
+              </div>
+            </div>
+            <div id="distChart"></div>
+            <div class="dist-legend" id="distLegend"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 样本数据导出 -->
+      <section class="view" id="view-sample">
+        <div class="grid cols-2">
+          <div class="card glass">
+            <div class="card-head"><div><div class="card-title">样本数据输入</div><div class="card-sub">每行或逗号分隔一个数值</div></div></div>
+            <div class="field full">
+              <label for="sampleName">样本名称（用于导出文件名）</label>
+              <input id="sampleName" type="text" value="维修时间样本">
+            </div>
+            <div class="field full" style="margin-top:14px;">
+              <label for="sampleData">样本数据</label>
+              <textarea id="sampleData" placeholder="例如：&#10;18, 22, 16, 25, 20, 19, 23, 17, 21, 24">18, 22, 16, 25, 20, 19, 23, 17, 21, 24
+12, 14, 11, 15, 13, 16, 14, 13, 15, 12</textarea>
+            </div>
+            <div class="btn-row">
+              <button class="glass-btn primary" id="sampleCompute" type="button">统计并预览</button>
+              <button class="glass-btn" id="sampleExport" type="button">导出 CSV</button>
+              <button class="glass-btn ghost" id="sampleCopy" type="button">复制统计</button>
+            </div>
+          </div>
+
+          <div class="card glass" id="sampleResult">
+            <div class="card-head"><div><div class="card-title">描述统计</div><div class="card-sub">n / 均值 / 标准差 / 极值 / 中位数</div></div></div>
+            <div class="metrics" id="sampleStatsOut"><div class="metric full"><span>提示</span><strong>输入数据后点击「统计并预览」</strong></div></div>
+            <div class="btn-row">
+              <button class="glass-btn" type="button" data-modal-title="样本数据 · 统计详情" data-modal-src="#sampleResult">弹窗查看</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- GJB 2072 方法9 -->
+      <section class="view" id="view-maintain">
+        <div class="grid cols-2">
+          <div class="card glass">
+            <div class="card-head"><div><div class="card-title">维修性参数输入</div><div class="card-sub">GJB 2072-94 附录A 方法9</div></div></div>
+            <form id="maintainForm">
+              <div class="field-grid">
+                <div class="field full"><label for="correctiveTimes">修复性维修时间（逗号分隔）</label><input id="correctiveTimes" type="text"></div>
+                <div class="field full"><label for="preventiveTimes">预防性维修时间（逗号分隔）</label><input id="preventiveTimes" type="text"></div>
+                <div class="field"><label for="betaMaintain">订购方风险 β</label><input id="betaMaintain" type="text" value="10%"></div>
+                <div class="field"><label for="percentileMaintain">最大修复时间百分位 p</label><input id="percentileMaintain" type="text" value="95%"></div>
+                <div class="field"><label for="fcInput">修复性权重 f_c</label><input id="fcInput" type="number" step="any" value="1"></div>
+                <div class="field"><label for="fpInput">预防性权重 f_p</label><input id="fpInput" type="number" step="any" value="1"></div>
+                <div class="field"><label for="mctInput">合同 M_ct</label><input id="mctInput" type="number" step="any" value="30"></div>
+                <div class="field"><label for="mptInput">合同 M_pt</label><input id="mptInput" type="number" step="any" value="25"></div>
+                <div class="field"><label for="mpcInput">合同 M_p/c</label><input id="mpcInput" type="number" step="any" value="28"></div>
+                <div class="field"><label for="mmaxInput">合同 M_maxct</label><input id="mmaxInput" type="number" step="any" value="55"></div>
+              </div>
+              <div class="btn-row">
+                <button class="glass-btn primary" type="submit">计算判决</button>
+                <button class="glass-btn" id="loadMaintainSample" type="button">载入示例</button>
+                <button class="glass-btn ghost" id="clearMaintainData" type="button">清空数据</button>
+                <button class="glass-btn ghost" id="maintainResetBtn" type="button">重置合同值</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card glass" id="maintainResult">
+            <div class="card-head"><div><div class="card-title">维修性判决</div><div class="card-sub" id="maintainRiskName">β = 10.0000%</div></div>
+              <div class="export-bar" style="display:flex;gap:8px;">
+                <button class="glass-btn" id="copyMaintain" type="button">复制文本</button>
+                <button class="glass-btn" id="csvMaintain" type="button">导出 CSV</button>
+              </div>
+            </div>
+            <div class="metrics">
+              <div class="metric"><span>nc / np</span><strong id="maintainCounts">—</strong></div>
+              <div class="metric"><span>平均修复时间</span><strong id="ctMean">—</strong></div>
+              <div class="metric"><span>平均预防性维修时间</span><strong id="ptMean">—</strong></div>
+              <div class="metric"><span>平均维修时间</span><strong id="pcMean">—</strong></div>
+              <div class="metric"><span>最大修复时间估计</span><strong id="maxCtEstimate">—</strong></div>
+              <div class="metric"><span>修复时间方差</span><strong id="ctVariance">—</strong></div>
+              <div class="metric"><span>预防性方差</span><strong id="ptVariance">—</strong></div>
+              <div class="metric"><span>Z₁₋β（或 t）</span><strong id="maintainZ">—</strong></div>
+              <div class="metric"><span>Z_p</span><strong id="maintainZp">—</strong></div>
+              <div class="metric"><span>ψ（A55）</span><strong id="maintainPsi">—</strong></div>
+            </div>
+            <div class="norm-chip hidden" id="normChip"></div>
+            <div class="warning" id="maintainWarning"></div>
+            <div style="margin-top:16px;"><div class="card-sub" style="margin-bottom:6px;">判决明细</div><div id="maintainDecisions"></div></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div class="footer">六性统计计算台 · 本地离线计算 · 依据 GJB 8895 / GJB 2072-94 / GJB 899A 等标准</div>
+
+  <!-- ===== Modal ===== -->
+  <div class="modal-mask" id="modalMask">
+    <div class="modal-card glass">
+      <div class="modal-head"><h3 id="modalTitle">结果详情</h3><button class="icon-btn" id="modalClose" type="button" aria-label="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
 
   <script>
     const form = document.getElementById("calcForm");
@@ -2175,7 +1011,6 @@
       return 0.5 * (1 + erf((x - mu) / (sigma * Math.SQRT2)));
     }
 
-    // t 分布分位数（Cornish-Fisher 展开），df>=30 时退化为正态
     function studentTInverse(p, df) {
       if (!(df > 0)) return inverseNormal(p);
       const z = inverseNormal(p);
@@ -2190,7 +1025,6 @@
         + inv * inv * inv * inv * (79 * z5 + 776 * z3 + 320 * z) / 92160;
     }
 
-    // 对数正态性 KS 检验：对 log 数据做正态性检验
     function ksNormalityCheck(values) {
       const n = values.length;
       if (n < 3) return null;
@@ -2309,7 +1143,6 @@
         const zPercentile = inverseNormal(percentile);
         const zBeta = zRisk;
 
-        // 小样本(n<30)采用 t 分布临界值替代正态，结果更保守
         const useTCt = nc > 0 && nc < 30;
         const useTPt = np > 0 && np < 30;
         const zCritCt = useTCt ? studentTInverse(1 - beta, nc - 1) : zRisk;
@@ -2330,8 +1163,6 @@
           const logs = corrective.map(Math.log);
           const logMean = mean(logs);
           const logVariance = sampleVariance(logs);
-          // A55 最大修复时间：取 p 分位数的上(1-β)置信限（保守估计），符号为 +。
-          // 若写成 - 则退化为下置信限，会低估最大修复时间、导致安全性指标假合格。
           psi = zPercentile + zCritMax * Math.sqrt(1 / nc + (zPercentile ** 2) / (2 * (nc - 1)));
           maxCt = Math.exp(logMean + psi * Math.sqrt(logVariance));
         }
@@ -2345,7 +1176,7 @@
         document.getElementById("pcMean").textContent = formatNumber(pcMeanValue);
         document.getElementById("maxCtEstimate").textContent = formatNumber(maxCt);
         document.getElementById("maintainZ").innerHTML = `<span class="math-var">Z<sub>1-β</sub></span> = ${formatNumber(zCritMax)}${(useTCt || useTPt) ? ' <span style="font-size:11px;color:var(--muted)">(t)</span>' : ''}`;
-        document.getElementById("maintainZp").innerHTML = `<span class="math-var">Z<sub>p</sub></span> = ${formatNumber(zPercentile)}`;
+        document.getElementById("maintainZp").textContent = formatNumber(zPercentile);
         document.getElementById("maintainPsi").textContent = formatNumber(psi);
 
         const warnings = [];
@@ -2426,12 +1257,12 @@
       document.getElementById("schemeR").textContent = "--";
       document.getElementById("schemeM").textContent = "--";
       document.getElementById("schemeMessage").textContent = text;
-      document.getElementById("schemeTable").innerHTML = "<tbody><tr><td colspan=\"3\">参数错误</td></tr></tbody>";
+      document.getElementById("schemeTable").innerHTML = "<tbody><tr><td colspan='3'>参数错误</td></tr></tbody>";
     }
 
     function renderScanTrace(trace, M, found) {
       if (trace.length === 0) {
-        document.getElementById("schemeTable").innerHTML = "<tbody><tr><td colspan=\"3\">无扫描结果（请调整参数）</td></tr></tbody>";
+        document.getElementById("schemeTable").innerHTML = "<tbody><tr><td colspan='3'>无扫描结果（请调整参数）</td></tr></tbody>";
         return;
       }
       const header = [
@@ -2470,12 +1301,11 @@
         document.getElementById("schemeBetaName").textContent = `β = ${formatPercent(beta, digits)}`;
         document.getElementById("schemeM").textContent = String(M);
 
-        // r 从 0 自增，取第一个使最小样本量 n_min(r) > M 的方案
         const trace = [];
         let found = null;
         for (let r = 0; ; r += 1) {
           const nMin = minimumSampleSize(q1, beta, r, maxN);
-          if (nMin === null) break; // 该 r 在 maxN 内无解，后续 r 更大必无解
+          if (nMin === null) break;
           trace.push({ r, n: nMin, exceed: nMin > M });
           if (nMin > M) {
             found = { r, n: nMin };
@@ -2619,88 +1449,6 @@
         showError(error.message);
       }
     }
-
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      calculate();
-    });
-
-    resetBtn.addEventListener("click", () => {
-      document.getElementById("metric").value = "FDR";
-      document.getElementById("confidence").value = "80%";
-      document.getElementById("sampleSize").value = "65";
-      document.getElementById("failures").value = "2";
-      document.getElementById("target").value = "90%";
-      document.getElementById("digits").value = "4";
-      document.getElementById("method").value = "exact";
-      document.getElementById("intervalType").value = "lower";
-      calculate();
-    });
-
-    document.getElementById("themeToggle").addEventListener("click", () => {
-      const root = document.documentElement;
-      const isDark = root.getAttribute("data-theme") === "dark";
-      root.setAttribute("data-theme", isDark ? "light" : "dark");
-      try { localStorage.setItem("gjb-theme", isDark ? "light" : "dark"); } catch (e) {}
-    });
-
-    try {
-      const saved = localStorage.getItem("gjb-theme");
-      if (saved === "dark") document.documentElement.setAttribute("data-theme", "dark");
-    } catch (e) {}
-
-    document.getElementById("copyMaintain").addEventListener("click", copyMaintain);
-    document.getElementById("csvMaintain").addEventListener("click", exportMaintainCsv);
-
-    schemeForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      calculateScheme();
-    });
-
-    schemeResetBtn.addEventListener("click", () => {
-      document.getElementById("q1Input").value = "90%";
-      document.getElementById("betaInput").value = "10%";
-      document.getElementById("mInput").value = "30";
-      document.getElementById("maxSearchN").value = "10000";
-      calculateScheme();
-    });
-
-    maintainForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      calculateMaintainability();
-    });
-
-    maintainResetBtn.addEventListener("click", () => {
-      document.getElementById("betaMaintain").value = "10%";
-      document.getElementById("percentileMaintain").value = "95%";
-      document.getElementById("fcInput").value = "1";
-      document.getElementById("fpInput").value = "1";
-      document.getElementById("mctInput").value = "30";
-      document.getElementById("mptInput").value = "25";
-      document.getElementById("mpcInput").value = "28";
-      document.getElementById("mmaxInput").value = "55";
-      calculateMaintainability();
-    });
-
-    loadMaintainSample.addEventListener("click", () => {
-      document.getElementById("correctiveTimes").value = [
-        18, 22, 16, 25, 20, 19, 24, 21, 17, 23,
-        26, 18, 20, 22, 19, 21, 24, 23, 18, 20,
-        22, 25, 17, 19, 21, 23, 24, 20, 18, 22
-      ].join(", ");
-      document.getElementById("preventiveTimes").value = [
-        12, 14, 11, 15, 13, 12, 16, 14, 13, 15,
-        12, 11, 14, 13, 16, 15, 12, 14, 13, 11,
-        15, 12, 14, 13, 16, 15, 11, 12, 14, 13
-      ].join(", ");
-      calculateMaintainability();
-    });
-
-    clearMaintainData.addEventListener("click", () => {
-      document.getElementById("correctiveTimes").value = "";
-      document.getElementById("preventiveTimes").value = "";
-      calculateMaintainability();
-    });
 
     // ---- 卡方分布 (chi-square) ----
     function regularizedLowerGamma(a, x) {
@@ -2921,45 +1669,8 @@
       }
     }
 
-    chiModeSel.addEventListener("change", () => { chiShowGroups(); calculateChi(); });
-    chiForm.addEventListener("submit", (event) => { event.preventDefault(); calculateChi(); });
-    document.getElementById("chiResetBtn").addEventListener("click", () => {
-      chiModeSel.value = "mtbf";
-      document.getElementById("chiT").value = "1000";
-      document.getElementById("chir").value = "0";
-      document.getElementById("chiConf").value = "80%";
-      document.getElementById("chiTmission").value = "100";
-      document.getElementById("chiN").value = "20";
-      document.getElementById("chiS").value = "2.5";
-      document.getElementById("chiVarConf").value = "90%";
-      document.getElementById("chiK").value = "10";
-      document.getElementById("chiP").value = "0.95";
-      document.getElementById("chiLambda").value = "0.001";
-      document.getElementById("chiTp").value = "100";
-      document.getElementById("chiM").value = "1";
-      document.getElementById("chiDigits").value = "4";
-      chiShowGroups();
-      calculateChi();
-    });
-
-    tabButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const pageId = button.dataset.page;
-        tabButtons.forEach((item) => item.classList.toggle("active", item === button));
-        document.querySelectorAll(".page").forEach((page) => {
-          page.classList.toggle("active", page.id === pageId);
-        });
-      });
-    });
-
-    calculate();
-    calculateScheme();
-    loadMaintainSample.click();
-    chiShowGroups();
-    calculateChi();
-
-    /* ===================== 统计分布模块 ===================== */
-    const distPageEl = document.getElementById("distPage");
+    /* ===================== 统计分布模块（含二项/伽马，连续+离散） ===================== */
+    const distPageEl = null;
     const distTabsEl = document.getElementById("distTabs");
     const distParamsEl = document.getElementById("distParams");
     const distPdfFormulaEl = document.getElementById("distPdfFormula");
@@ -2970,6 +1681,8 @@
     const distChartEl = document.getElementById("distChart");
     const distLegendEl = document.getElementById("distLegend");
     const distViewToggleEl = document.getElementById("distViewToggle");
+    const distSliderEl = document.getElementById("distSlider");
+    const distSliderValEl = document.getElementById("distSliderVal");
 
     const distState = { current: "exp", view: "pdf" };
 
@@ -2989,8 +1702,9 @@
     const DIST = {
       exp: {
         label: "指数分布",
+        type: "continuous",
         params: [
-          { id: "lam", label: "失效率 λ", def: 0.5, step: "any", hint: "平均寿命 θ = 1/λ = 2.000" }
+          { id: "lam", label: "失效率 λ", def: 0.5, step: "any", hint: "平均寿命 θ = 1/λ = 2.000", slider: { min: 0.1, max: 3, step: 0.05 } }
         ],
         domain: (p) => [0, 6 / p.lam],
         pdf: (p) => (x) => p.lam * Math.exp(-p.lam * x),
@@ -3002,8 +1716,9 @@
       },
       norm: {
         label: "正态分布",
+        type: "continuous",
         params: [
-          { id: "mu", label: "均值 μ", def: 0, step: "any" },
+          { id: "mu", label: "均值 μ", def: 0, step: "any", slider: { min: -5, max: 5, step: 0.1 } },
           { id: "sigma", label: "标准差 σ", def: 1, step: "any", hint: "σ > 0" }
         ],
         domain: (p) => [p.mu - 4 * p.sigma, p.mu + 4 * p.sigma],
@@ -3016,8 +1731,9 @@
       },
       weib: {
         label: "威布尔分布",
+        type: "continuous",
         params: [
-          { id: "beta", label: "形状参数 β", def: 1.5, step: "any", hint: "β > 0；β=1 退化为指数" },
+          { id: "beta", label: "形状参数 β", def: 1.5, step: "any", hint: "β > 0；β=1 退化为指数", slider: { min: 0.5, max: 4, step: 0.1 } },
           { id: "eta", label: "尺度参数 η", def: 1, step: "any", hint: "η > 0（特征寿命）" }
         ],
         domain: (p) => [0, Math.max(p.eta * 1.8, 3)],
@@ -3027,6 +1743,36 @@
         cdfFormula: (p) => `F(x) = 1 − e<sup>−(x/η)<sup>β</sup></sup>， x ≥ 0`,
         extra: { title: "可靠度函数 R(x)", formula: (p) => `R(x) = e<sup>−(x/η)<sup>β</sup></sup>` },
         markers: (p) => [{ x: p.eta, label: "η" }]
+      },
+      binom: {
+        label: "二项分布",
+        type: "discrete",
+        params: [
+          { id: "ntrials", label: "试验次数 n", def: 20, step: 1, hint: "n 为正整数" },
+          { id: "bp", label: "成功概率 p", def: 0.3, step: "any", hint: "0<p<1", slider: { min: 0.02, max: 0.98, step: 0.01 } }
+        ],
+        getN: (p) => Math.max(1, Math.round(p.ntrials)),
+        pmf: (p) => (k) => { if (k < 0 || k > p.ntrials) return 0; return Math.exp(logBinomialPmf(p.ntrials, k, p.bp)); },
+        cdf: (p) => (k) => { if (k < 0) return 0; if (k >= p.ntrials) return 1; let s = 0; for (let i = 0; i <= k; i += 1) s += Math.exp(logBinomialPmf(p.ntrials, i, p.bp)); return s; },
+        pdfFormula: (p) => `P(X=k) = C(n,k)·p<sup>k</sup>·(1−p)<sup>n−k</sup>`,
+        cdfFormula: (p) => `F(k) = Σ<sub>i=0</sub><sup>k</sup> C(n,i)·p<sup>i</sup>·(1−p)<sup>n−i</sup>`,
+        extra: { title: "均值与方差", formula: (p) => `E(X)=np=${fmtN(p.ntrials * p.bp)}，Var(X)=np(1−p)=${fmtN(p.ntrials * p.bp * (1 - p.bp))}` },
+        markers: (p) => [{ x: Math.round(p.ntrials * p.bp), label: "np" }]
+      },
+      gamma: {
+        label: "伽马分布",
+        type: "continuous",
+        params: [
+          { id: "alpha", label: "形状参数 α", def: 2, step: "any", hint: "α>0", slider: { min: 0.5, max: 6, step: 0.1 } },
+          { id: "theta", label: "尺度参数 θ", def: 2, step: "any", hint: "θ>0，均值=αθ" }
+        ],
+        domain: (p) => [0, Math.max(p.alpha * p.theta * 3, 8)],
+        pdf: (p) => (x) => x <= 0 ? 0 : Math.pow(x, p.alpha - 1) * Math.exp(-x / p.theta) / (Math.pow(p.theta, p.alpha) * Math.exp(logGamma(p.alpha))),
+        cdf: (p) => (x) => x <= 0 ? 0 : regularizedLowerGamma(p.alpha, x / p.theta),
+        pdfFormula: (p) => `f(x)= x<sup>α−1</sup>·e<sup>−x/θ</sup> / (θ<sup>α</sup>·Γ(α))， x≥0`,
+        cdfFormula: (p) => `F(x)= γ(α, x/θ) / Γ(α)（下不完全伽马比）`,
+        extra: { title: "可靠度函数 R(x)", formula: (p) => `R(x)=1 − γ(α, x/θ)/Γ(α)` },
+        markers: (p) => { const m = [{ x: p.alpha * p.theta, label: "均值 αθ" }]; if (p.alpha > 1) m.push({ x: (p.alpha - 1) * p.theta, label: "众数" }); return m; }
       }
     };
 
@@ -3042,21 +1788,32 @@
       return p;
     }
 
+    function syncSlider() {
+      const cfg = DIST[distState.current];
+      const sp = cfg.params.find((pr) => pr.slider);
+      if (!sp) { distSliderEl.style.display = "none"; distSliderValEl.textContent = ""; return; }
+      distSliderEl.style.display = "";
+      distSliderEl.min = sp.slider.min;
+      distSliderEl.max = sp.slider.max;
+      distSliderEl.step = sp.slider.step;
+      const el = document.getElementById("dist_" + sp.id);
+      const v = el ? parseFloat(el.value) : sp.def;
+      distSliderEl.value = v;
+      distSliderValEl.textContent = fmtN(v);
+    }
+
     function renderDistParams() {
       const cfg = DIST[distState.current];
       let html = "";
       cfg.params.forEach((pr) => {
-        html += `<div class="p-field">
-          <label for="dist_${pr.id}">${pr.label}</label>
-          <input id="dist_${pr.id}" type="number" step="${pr.step}" value="${pr.def}">
-          ${pr.hint ? `<div class="hint">${pr.hint}</div>` : ""}
-        </div>`;
+        html += `<div class="field"><label for="dist_${pr.id}">${pr.label}</label><input id="dist_${pr.id}" type="number" step="${pr.step}" value="${pr.def}">${pr.hint ? `<div class="hint">${pr.hint}</div>` : ""}</div>`;
       });
       distParamsEl.innerHTML = html;
       cfg.params.forEach((pr) => {
         const el = document.getElementById("dist_" + pr.id);
-        el.addEventListener("input", () => { renderDistFormulas(); drawDistChart(); });
+        el.addEventListener("input", () => { syncSlider(); renderDistFormulas(); drawDistChart(); });
       });
+      syncSlider();
     }
 
     function renderDistFormulas() {
@@ -3082,6 +1839,7 @@
 
     function drawDistChart() {
       const cfg = DIST[distState.current];
+      if (cfg.type === "discrete") return drawDiscreteChart(cfg);
       const p = getDistParams();
       const view = distState.view;
       const dom = cfg.domain(p);
@@ -3092,7 +1850,7 @@
       const xs = new Array(N + 1), pdfVals = new Array(N + 1), cdfVals = new Array(N + 1);
       let pdfPeak = 0;
       const pdfFn = cfg.pdf(p), cdfFn = cfg.cdf(p);
-      for (let i = 0; i <= N; i++) {
+      for (let i = 0; i <= N; i += 1) {
         const x = xmin + (xmax - xmin) * i / N;
         const pv = pdfFn(x), cv = cdfFn(x);
         xs[i] = x; pdfVals[i] = pv; cdfVals[i] = cv;
@@ -3104,13 +1862,13 @@
 
       let grid = "", yticks = "", xticks = "";
       const ySteps = 5;
-      for (let i = 0; i <= ySteps; i++) {
+      for (let i = 0; i <= ySteps; i += 1) {
         const yv = yMax * i / ySteps, yy = Y(yv);
         grid += `<line class="dist-grid" x1="${mL}" y1="${yy.toFixed(1)}" x2="${(mL + pw).toFixed(1)}" y2="${yy.toFixed(1)}"/>`;
         yticks += `<text class="dist-tick" x="${mL - 8}" y="${(yy + 4).toFixed(1)}" text-anchor="end">${fmtAxis(yv)}</text>`;
       }
       const xSteps = 6;
-      for (let i = 0; i <= xSteps; i++) {
+      for (let i = 0; i <= xSteps; i += 1) {
         const xv = xmin + (xmax - xmin) * i / xSteps, xx = X(xv);
         grid += `<line class="dist-grid" x1="${xx.toFixed(1)}" y1="${mT}" x2="${xx.toFixed(1)}" y2="${mT + ph}"/>`;
         xticks += `<text class="dist-tick" x="${xx.toFixed(1)}" y="${mT + ph + 18}" text-anchor="middle">${fmtAxis(xv)}</text>`;
@@ -3119,7 +1877,7 @@
 
       function pathOf(vals) {
         let d = "";
-        for (let i = 0; i <= N; i++) d += (i === 0 ? "M" : "L") + X(xs[i]).toFixed(1) + " " + Y(vals[i]).toFixed(1) + " ";
+        for (let i = 0; i <= N; i += 1) d += (i === 0 ? "M" : "L") + X(xs[i]).toFixed(1) + " " + Y(vals[i]).toFixed(1) + " ";
         return d.trim();
       }
       const pdfPath = pathOf(pdfVals), cdfPath = pathOf(cdfVals);
@@ -3179,6 +1937,100 @@
       capture.addEventListener("mouseleave", () => { hover.style.display = "none"; });
     }
 
+    function drawDiscreteChart(cfg) {
+      const p = getDistParams();
+      const view = distState.view;
+      const n = cfg.getN(p);
+      const W = 680, H = 360, mL = 52, mR = 18, mT = 18, mB = 38;
+      const pw = W - mL - mR, ph = H - mT - mB;
+      const pmfFn = cfg.pmf(p), cdfFn = cfg.cdf(p);
+      const ks = []; for (let k = 0; k <= n; k += 1) ks.push(k);
+      let pmax = 0; ks.forEach((k) => { const v = pmfFn(k); if (v > pmax) pmax = v; });
+      const yMax = view === "cdf" ? 1.05 : (view === "pdf" ? pmax * 1.18 : Math.max(pmax * 1.18, 1.05));
+      const bw = pw / (n + 1);
+      const X = (k) => mL + (k + 0.5) / (n + 1) * pw;
+      const Y = (y) => mT + ph - (y / yMax) * ph;
+
+      let grid = "", yticks = "", xticks = "";
+      const ySteps = 5;
+      for (let i = 0; i <= ySteps; i += 1) {
+        const yv = yMax * i / ySteps, yy = Y(yv);
+        grid += `<line class="dist-grid" x1="${mL}" y1="${yy.toFixed(1)}" x2="${(mL + pw).toFixed(1)}" y2="${yy.toFixed(1)}"/>`;
+        yticks += `<text class="dist-tick" x="${mL - 8}" y="${(yy + 4).toFixed(1)}" text-anchor="end">${fmtAxis(yv)}</text>`;
+      }
+      for (let i = 0; i <= n; i += 1) {
+        const xx = X(i);
+        grid += `<line class="dist-grid" x1="${xx.toFixed(1)}" y1="${mT}" x2="${xx.toFixed(1)}" y2="${mT + ph}"/>`;
+        xticks += `<text class="dist-tick" x="${xx.toFixed(1)}" y="${mT + ph + 18}" text-anchor="middle">${i}</text>`;
+      }
+      const axes = `<line class="dist-axis" x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT + ph}"/><line class="dist-axis" x1="${mL}" y1="${mT + ph}" x2="${mL + pw}" y2="${mT + ph}"/>`;
+
+      let bars = "";
+      if (view === "pdf" || view === "both") {
+        ks.forEach((k) => {
+          const v = pmfFn(k); const x0 = X(k) - bw * 0.36, w = bw * 0.72; const y0 = Y(v);
+          bars += `<rect class="dist-pdf-area" x="${x0.toFixed(1)}" y="${y0.toFixed(1)}" width="${w.toFixed(1)}" height="${(mT + ph - y0).toFixed(1)}" rx="3"/>`;
+        });
+      }
+      let cdfPath = "";
+      if (view === "cdf" || view === "both") {
+        let d = "";
+        for (let i = 0; i <= n; i += 1) {
+          const x0 = X(i) - bw / 2, y0 = Y(cdfFn(i));
+          d += (i === 0 ? "M" : "L") + x0.toFixed(1) + " " + Y(0).toFixed(1) + " L" + x0.toFixed(1) + " " + y0.toFixed(1) + " L" + (i < n ? (X(i) + bw / 2).toFixed(1) : X(i).toFixed(1)) + " " + y0.toFixed(1) + " ";
+        }
+        cdfPath = `<path class="dist-cdf-line" d="${d.trim()}"/>`;
+      }
+
+      let markerSvg = "";
+      (cfg.markers ? cfg.markers(p) : []).forEach((mk) => {
+        if (mk.x < 0 || mk.x > n) return;
+        const xx = X(mk.x).toFixed(1);
+        markerSvg += `<line class="dist-marker" x1="${xx}" y1="${mT}" x2="${xx}" y2="${mT + ph}"/>`;
+        markerSvg += `<text class="dist-marker-label" x="${xx}" y="${mT - 4}" text-anchor="middle">${mk.label}</text>`;
+      });
+
+      distChartEl.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="dist-svg">
+        ${grid}${axes}${yticks}${xticks}${bars}${cdfPath}${markerSvg}
+        <g class="dist-hover" id="distHover" style="display:none">
+          <line class="dist-hover-line" x1="0" y1="${mT}" x2="0" y2="${mT + ph}"/>
+          <circle class="dist-hover-dot" r="4.5"/>
+          <text class="dist-hover-text" x="0" y="0"></text>
+        </g>
+        <rect class="dist-capture" x="${mL}" y="${mT}" width="${pw}" height="${ph}" fill="transparent" style="pointer-events:all" id="distCapture"/>
+      </svg>`;
+
+      const svgEl = distChartEl.querySelector("svg");
+      const capture = distChartEl.querySelector("#distCapture");
+      const hover = distChartEl.querySelector("#distHover");
+      const hLine = hover.querySelector(".dist-hover-line");
+      const hDot = hover.querySelector(".dist-hover-dot");
+      const hText = hover.querySelector(".dist-hover-text");
+      function onMove(e) {
+        const rect = svgEl.getBoundingClientRect();
+        let vx = (e.clientX - rect.left) / rect.width * W;
+        let k = Math.round((vx - mL) / pw * (n + 1) - 0.5);
+        if (k < 0) k = 0; if (k > n) k = n;
+        const px = X(k);
+        const pv = pmfFn(k), cv = cdfFn(k);
+        const yv = (view === "cdf" && view !== "both") ? cv : pv;
+        const py = Y(yv);
+        hover.style.display = "";
+        hLine.setAttribute("x1", px.toFixed(1)); hLine.setAttribute("x2", px.toFixed(1));
+        hDot.setAttribute("cx", px.toFixed(1)); hDot.setAttribute("cy", py.toFixed(1));
+        let label = `k=${k}`;
+        if (view === "pdf" || view === "both") label += `  P=${fmtAxis(pv)}`;
+        if (view === "cdf" || view === "both") label += `  F=${fmtAxis(cv)}`;
+        hText.textContent = label;
+        let tx = px + 9, ty = py - 9;
+        if (ty < mT + 14) ty = py + 18;
+        if (tx > mL + pw - 90) tx = px - 9 - 90;
+        hText.setAttribute("x", tx.toFixed(1)); hText.setAttribute("y", ty.toFixed(1));
+      }
+      capture.addEventListener("mousemove", onMove);
+      capture.addEventListener("mouseleave", () => { hover.style.display = "none"; });
+    }
+
     function renderDistAll() {
       renderDistParams();
       renderDistFormulas();
@@ -3201,8 +2053,220 @@
         drawDistChart();
       });
     });
+    distSliderEl.addEventListener("input", () => {
+      const cfg = DIST[distState.current];
+      const sp = cfg.params.find((pr) => pr.slider);
+      if (!sp) return;
+      document.getElementById("dist_" + sp.id).value = distSliderEl.value;
+      distSliderValEl.textContent = fmtN(parseFloat(distSliderEl.value));
+      renderDistFormulas();
+      drawDistChart();
+    });
 
+    /* ===================== 样本数据导出 ===================== */
+    function computeSampleStats() {
+      const raw = document.getElementById("sampleData").value;
+      const vals = parseNumberList(raw, "样本数据");
+      if (vals.length === 0) {
+        document.getElementById("sampleStatsOut").innerHTML = '<div class="metric full"><span>提示</span><strong>请输入样本数据</strong></div>';
+        return null;
+      }
+      const n = vals.length, m = mean(vals), sd = Math.sqrt(sampleVariance(vals));
+      const sorted = [...vals].sort((a, b) => a - b);
+      const med = n % 2 ? sorted[(n - 1) / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
+      const mn = sorted[0], mx = sorted[n - 1];
+      document.getElementById("sampleStatsOut").innerHTML =
+        chiMetric("样本量 n", String(n)) +
+        chiMetric("均值", m.toFixed(4)) +
+        chiMetric("标准差 s", sd.toFixed(4)) +
+        chiMetric("最小值", mn.toFixed(4)) +
+        chiMetric("最大值", mx.toFixed(4)) +
+        chiMetric("中位数", med.toFixed(4));
+      return { vals, n, m, sd, mn, mx, med };
+    }
+    function exportSampleCsv() {
+      const d = computeSampleStats();
+      if (!d) return;
+      const name = (document.getElementById("sampleName").value.trim() || "样本");
+      const rows = [["序号", name]];
+      d.vals.forEach((v, i) => rows.push([i + 1, v]));
+      const csv = "﻿" + rows.map((r) => r.join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `${name}_样本数据.csv`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    function copySampleStats() {
+      const d = computeSampleStats();
+      if (!d) return;
+      const name = (document.getElementById("sampleName").value.trim() || "样本");
+      const text = `${name}\nn=${d.n}\n均值=${d.m.toFixed(4)}\n标准差=${d.sd.toFixed(4)}\n最小值=${d.mn.toFixed(4)}\n最大值=${d.mx.toFixed(4)}\n中位数=${d.med.toFixed(4)}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => flashButton("sampleCopy", "已复制"));
+      else fallbackCopy(text);
+    }
+    document.getElementById("sampleCompute").addEventListener("click", () => withLoading(computeSampleStats));
+    document.getElementById("sampleExport").addEventListener("click", exportSampleCsv);
+    document.getElementById("sampleCopy").addEventListener("click", copySampleStats);
+
+    /* ===================== 导航 / 弹窗 / 加载条 ===================== */
+    const topCats = document.querySelectorAll(".top-cat");
+    const sideItems = document.querySelectorAll(".side-item");
+    const views = document.querySelectorAll(".view");
+    const mainScroll = document.querySelector(".main-scroll");
+
+    function activateView(viewId) {
+      views.forEach((v) => v.classList.toggle("active", v.id === "view-" + viewId));
+      sideItems.forEach((s) => s.classList.toggle("active", s.dataset.view === viewId));
+      if (mainScroll) mainScroll.scrollTop = 0;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    topCats.forEach((c) => c.addEventListener("click", () => {
+      const cat = c.dataset.cat;
+      topCats.forEach((x) => x.classList.toggle("active", x === c));
+      sideItems.forEach((s) => { s.style.display = s.dataset.cat === cat ? "" : "none"; });
+      const first = [...sideItems].find((s) => s.dataset.cat === cat);
+      if (first) activateView(first.dataset.view);
+    }));
+    sideItems.forEach((s) => s.addEventListener("click", () => activateView(s.dataset.view)));
+    document.querySelectorAll(".tool-card").forEach((t) => t.addEventListener("click", () => {
+      const cat = catFor(t.dataset.view);
+      topCats.forEach((x) => x.classList.toggle("active", x.dataset.cat === cat));
+      sideItems.forEach((s) => { s.style.display = s.dataset.cat === cat ? "" : "none"; });
+      activateView(t.dataset.view);
+    }));
+    function catFor(viewId) {
+      const map = { overview: "overview", lower: "reliability", scheme: "reliability", chisq: "distribution", dist: "distribution", sample: "distribution", maintain: "maintain" };
+      return map[viewId] || "overview";
+    }
+
+    // modal
+    const modalMask = document.getElementById("modalMask");
+    function openModal(title, srcSel) {
+      const src = document.querySelector(srcSel);
+      document.getElementById("modalTitle").textContent = title;
+      document.getElementById("modalBody").innerHTML = src ? src.innerHTML : "";
+      modalMask.classList.add("show");
+    }
+    function closeModal() { modalMask.classList.remove("show"); }
+    document.querySelectorAll("[data-modal-src]").forEach((btn) => {
+      btn.addEventListener("click", () => openModal(btn.dataset.modalTitle || "结果详情", btn.dataset.modalSrc));
+    });
+    document.getElementById("modalClose").addEventListener("click", closeModal);
+    modalMask.addEventListener("click", (e) => { if (e.target === modalMask) closeModal(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+
+    // loading bar (Apple buffer)
+    const loadingBar = document.getElementById("loadingBar");
+    function showLoading() { loadingBar.classList.add("active"); }
+    function hideLoading() { loadingBar.classList.remove("active"); }
+    function withLoading(fn) {
+      showLoading();
+      setTimeout(() => { try { if (fn) fn(); } finally { hideLoading(); } }, 420);
+    }
+
+    // theme toggle
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const root = document.documentElement;
+      const isDark = root.getAttribute("data-theme") === "dark";
+      root.setAttribute("data-theme", isDark ? "light" : "dark");
+      try { localStorage.setItem("gjb-theme", isDark ? "light" : "dark"); } catch (e) {}
+    });
+    try {
+      const saved = localStorage.getItem("gjb-theme");
+      if (saved === "dark") document.documentElement.setAttribute("data-theme", "dark");
+    } catch (e) {}
+
+    // form listeners (with loading bar for compute actions)
+    form.addEventListener("submit", (event) => { event.preventDefault(); withLoading(calculate); });
+    resetBtn.addEventListener("click", () => {
+      document.getElementById("metric").value = "FDR";
+      document.getElementById("confidence").value = "80%";
+      document.getElementById("sampleSize").value = "65";
+      document.getElementById("failures").value = "2";
+      document.getElementById("target").value = "90%";
+      document.getElementById("digits").value = "4";
+      document.getElementById("method").value = "exact";
+      document.getElementById("intervalType").value = "lower";
+      calculate();
+    });
+    document.getElementById("copyMaintain").addEventListener("click", copyMaintain);
+    document.getElementById("csvMaintain").addEventListener("click", exportMaintainCsv);
+
+    schemeForm.addEventListener("submit", (event) => { event.preventDefault(); withLoading(calculateScheme); });
+    schemeResetBtn.addEventListener("click", () => {
+      document.getElementById("q1Input").value = "90%";
+      document.getElementById("betaInput").value = "10%";
+      document.getElementById("mInput").value = "30";
+      document.getElementById("maxSearchN").value = "10000";
+      calculateScheme();
+    });
+
+    maintainForm.addEventListener("submit", (event) => { event.preventDefault(); withLoading(calculateMaintainability); });
+    maintainResetBtn.addEventListener("click", () => {
+      document.getElementById("betaMaintain").value = "10%";
+      document.getElementById("percentileMaintain").value = "95%";
+      document.getElementById("fcInput").value = "1";
+      document.getElementById("fpInput").value = "1";
+      document.getElementById("mctInput").value = "30";
+      document.getElementById("mptInput").value = "25";
+      document.getElementById("mpcInput").value = "28";
+      document.getElementById("mmaxInput").value = "55";
+      calculateMaintainability();
+    });
+    loadMaintainSample.addEventListener("click", () => {
+      document.getElementById("correctiveTimes").value = [
+        18, 22, 16, 25, 20, 19, 24, 21, 17, 23,
+        26, 18, 20, 22, 19, 21, 24, 23, 18, 20,
+        22, 25, 17, 19, 21, 23, 24, 20, 18, 22
+      ].join(", ");
+      document.getElementById("preventiveTimes").value = [
+        12, 14, 11, 15, 13, 12, 16, 14, 13, 15,
+        12, 11, 14, 13, 16, 15, 12, 14, 13, 11,
+        15, 12, 14, 13, 16, 15, 11, 12, 14, 13
+      ].join(", ");
+      calculateMaintainability();
+    });
+    clearMaintainData.addEventListener("click", () => {
+      document.getElementById("correctiveTimes").value = "";
+      document.getElementById("preventiveTimes").value = "";
+      calculateMaintainability();
+    });
+
+    chiModeSel.addEventListener("change", () => { chiShowGroups(); withLoading(calculateChi); });
+    chiForm.addEventListener("submit", (event) => { event.preventDefault(); withLoading(calculateChi); });
+    document.getElementById("chiResetBtn").addEventListener("click", () => {
+      chiModeSel.value = "mtbf";
+      document.getElementById("chiT").value = "1000";
+      document.getElementById("chir").value = "0";
+      document.getElementById("chiConf").value = "80%";
+      document.getElementById("chiTmission").value = "100";
+      document.getElementById("chiN").value = "20";
+      document.getElementById("chiS").value = "2.5";
+      document.getElementById("chiVarConf").value = "90%";
+      document.getElementById("chiK").value = "10";
+      document.getElementById("chiP").value = "0.95";
+      document.getElementById("chiLambda").value = "0.001";
+      document.getElementById("chiTp").value = "100";
+      document.getElementById("chiM").value = "1";
+      document.getElementById("chiDigits").value = "4";
+      chiShowGroups();
+      calculateChi();
+    });
+
+    /* ===================== 初始化 ===================== */
+    calculate();
+    calculateScheme();
+    loadMaintainSample.click();
+    chiShowGroups();
+    calculateChi();
     renderDistAll();
+
+    // default to overview
+    topCats.forEach((x) => x.classList.toggle("active", x.dataset.cat === "overview"));
+    sideItems.forEach((s) => { s.style.display = s.dataset.cat === "overview" ? "" : "none"; });
+    activateView("overview");
   </script>
 </body>
 </html>
