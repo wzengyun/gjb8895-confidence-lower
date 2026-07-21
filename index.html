@@ -462,6 +462,102 @@
       line-height: 1.2;
     }
 
+    /* ---- 卡方模块：科学读数样式（仅作用于 chiPage） ---- */
+    #chiPage .result-label {
+      font-family: var(--num-font);
+      letter-spacing: 0.01em;
+      font-size: 14px;
+    }
+    #chiPage .result-value {
+      font-family: var(--num-font);
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      font-size: 38px;
+    }
+    #chiPage .metrics {
+      display: block;
+      grid-template-columns: none;
+      gap: 0;
+      margin-bottom: 14px;
+    }
+    #chiPage .metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 18px;
+      border: none;
+      border-bottom: 1px solid var(--hairline);
+      border-radius: 0;
+      padding: 12px 2px;
+      background: none;
+      box-shadow: none;
+    }
+    #chiPage .metric:last-child {
+      border-bottom: none;
+    }
+    #chiPage .metric span {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 13px;
+      font-weight: 600;
+      text-align: left;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    #chiPage .metric strong {
+      font-family: var(--num-font);
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--ink);
+      text-align: right;
+      flex: 0 1 auto;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      line-height: 1.3;
+    }
+    #chiPage .chi-pmf {
+      margin: 4px 0 16px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    #chiPage .chi-pmf table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--num-font);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+    #chiPage .chi-pmf caption {
+      caption-side: top;
+      text-align: left;
+      padding: 10px 12px 6px;
+      color: var(--ink-soft);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    #chiPage .chi-pmf th, #chiPage .chi-pmf td {
+      padding: 7px 12px;
+      text-align: right;
+      border-top: 1px solid var(--hairline);
+    }
+    #chiPage .chi-pmf th:first-child, #chiPage .chi-pmf td:first-child {
+      text-align: left;
+    }
+    #chiPage .chi-pmf thead th {
+      color: var(--muted);
+      font-weight: 700;
+      background: #f6f9fc;
+    }
+    #chiPage .chi-pmf tbody tr:nth-child(even) {
+      background: #fafcfe;
+    }
+    #chiPage .chi-pmf tbody tr.chi-pmf-hl {
+      background: var(--accent-soft);
+      font-weight: 700;
+    }
+
     .formula {
       border-radius: 8px;
       background: linear-gradient(180deg, #f7fbff 0%, #eef8fb 100%);
@@ -1030,6 +1126,65 @@
       color: var(--accent-strong);
       background: #fff;
     }
+
+    /* ---- 卡方模块：计算模式单独成行（完整展示） ---- */
+    #chiPage .chi-mode-row { margin-bottom: 14px; }
+    #chiPage .chi-mode-row label { display: block; font-size: 13px; color: var(--ink-soft); margin-bottom: 6px; }
+
+    /* ---- 统计分布模块 ---- */
+    #distPage .dist-tabs { display: flex; gap: 8px; margin: 4px 0 16px; flex-wrap: wrap; }
+    #distPage .dist-tab {
+      flex: 1 1 140px; padding: 11px 14px; border: 1px solid var(--hairline);
+      background: var(--panel); border-radius: var(--radius-sm); cursor: pointer;
+      color: var(--ink-soft); font-weight: 600; font-size: 14px; transition: .15s;
+    }
+    #distPage .dist-tab:hover { border-color: var(--accent); }
+    #distPage .dist-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: var(--shadow-soft); }
+    #distPage .dist-body { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+    #distPage .dist-side { flex: 1 1 320px; min-width: 280px; }
+    #distPage .dist-params { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 12px; margin-bottom: 16px; }
+    #distPage .dist-params .p-field label { display: block; font-size: 13px; color: var(--ink-soft); margin-bottom: 5px; }
+    #distPage .dist-params .p-field input {
+      width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px;
+      background: var(--panel); color: var(--ink); font-family: var(--num-font); font-size: 14px;
+    }
+    #distPage .dist-params .p-field input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    #distPage .formula-block {
+      background: var(--soft); border: 1px solid var(--hairline); border-left: 3px solid var(--accent);
+      border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 10px;
+    }
+    #distPage .formula-title { font-size: 12px; color: var(--muted); margin-bottom: 5px; letter-spacing: .04em; }
+    #distPage .formula {
+      font-family: "Cambria Math", "Latin Modern Math", Georgia, "Times New Roman", serif;
+      font-style: italic; font-size: 18px; line-height: 1.5; color: var(--ink); word-break: break-word;
+    }
+    #distPage .formula sup { font-size: .7em; }
+    #distPage .dist-chart-wrap { flex: 1 1 380px; min-width: 300px; }
+    #distPage .dist-chart-toolbar { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+    #distPage .dist-toggle { display: inline-flex; border: 1px solid var(--hairline); border-radius: 10px; overflow: hidden; }
+    #distPage .dist-toggle button { border: none; background: var(--panel); padding: 7px 14px; cursor: pointer; color: var(--ink-soft); font: inherit; font-size: 13px; }
+    #distPage .dist-toggle button + button { border-left: 1px solid var(--hairline); }
+    #distPage .dist-toggle button.active { background: var(--accent); color: #fff; }
+    #distPage .dist-chart { background: var(--soft); border: 1px solid var(--hairline); border-radius: var(--radius-sm); padding: 8px; }
+    #distPage .dist-svg { width: 100%; height: auto; display: block; }
+    #distPage .dist-legend { display: flex; gap: 16px; margin-top: 8px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+    #distPage .lg-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+    #distPage .lg-swatch.pdf { background: var(--accent); }
+    #distPage .lg-swatch.cdf { background: var(--gold); }
+    #distPage .dist-grid { stroke: var(--hairline); stroke-width: 1; }
+    #distPage .dist-axis { stroke: var(--ink-soft); stroke-width: 1.2; }
+    #distPage .dist-tick { fill: var(--muted); font-size: 11px; font-family: var(--num-font); }
+    #distPage .dist-pdf-area { fill: url(#distPdfGrad); }
+    #distPage .dist-pdf-line { fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+    #distPage .dist-cdf-line { fill: none; stroke: var(--gold); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+    #distPage .dist-grad-top { stop-color: var(--accent); stop-opacity: .30; }
+    #distPage .dist-grad-bottom { stop-color: var(--accent); stop-opacity: 0; }
+    #distPage .dist-marker { stroke: var(--red); stroke-width: 1; stroke-dasharray: 4 3; opacity: .6; }
+    #distPage .dist-marker-label { fill: var(--red); font-size: 11px; font-family: var(--num-font); }
+    #distPage .dist-hover-line { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 3; opacity: .5; }
+    #distPage .dist-hover-dot { fill: var(--accent); stroke: #fff; stroke-width: 1.5; }
+    #distPage .dist-hover-text { fill: var(--ink); font-size: 11px; font-family: var(--num-font); }
+    @media (max-width: 860px) { #distPage .dist-body { flex-direction: column; } }
   </style>
 </head>
 <body>
@@ -1078,6 +1233,10 @@
       <button class="tab-button" type="button" data-page="chiPage">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M3 20c2 0 3-9 6-12s5-1 9 1"/></svg>
         <span>卡方分布</span>
+      </button>
+      <button class="tab-button" type="button" data-page="distPage">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h18"/><path d="M5 19c2 0 3-11 7-11s5 11 7 11"/></svg>
+        <span>统计分布</span>
       </button>
     </nav>
 
@@ -1594,15 +1753,16 @@
             <div class="panel-note">指数寿命型可靠性验证 · 正态方差置信区间 · χ² 分位数</div>
           </div>
           <form class="form" id="chiForm">
+            <div class="chi-mode-row">
+              <label for="chiMode">计算模式</label>
+              <select id="chiMode">
+                <option value="mtbf">寿命型 MTBF 置信下限（指数分布 χ² 法）</option>
+                <option value="variance">正态方差 σ² 置信区间（χ² 法）</option>
+                <option value="quantile">χ² 分位数 / 临界值查询</option>
+                <option value="poisson">泊松分布：概率与可靠度</option>
+              </select>
+            </div>
             <div class="field-grid">
-              <div>
-                <label for="chiMode">计算模式</label>
-                <select id="chiMode">
-                  <option value="mtbf">寿命型 MTBF 置信下限（指数分布 χ² 法）</option>
-                  <option value="variance">正态方差 σ² 置信区间（χ² 法）</option>
-                  <option value="quantile">χ² 分位数 / 临界值查询</option>
-                </select>
-              </div>
               <div>
                 <label for="chiDigits">结果小数位</label>
                 <select id="chiDigits">
@@ -1674,6 +1834,29 @@
               </div>
             </div>
 
+            <div id="chiPoissonGroup" hidden>
+              <div class="field-grid">
+                <div>
+                  <label for="chiLambda">平均发生率 λ</label>
+                  <input id="chiLambda" type="number" min="0" step="any" value="0.001">
+                  <div class="hint">单位时间内的期望故障数（如 次/h，λ=1/MTBF）</div>
+                </div>
+                <div>
+                  <label for="chiTp">任务时间 t</label>
+                  <input id="chiTp" type="number" min="0" step="any" value="100">
+                  <div class="hint">与 λ 同单位（如 h）</div>
+                </div>
+              </div>
+              <div class="field-grid">
+                <div>
+                  <label for="chiM">允许故障数 m（可选）</label>
+                  <input id="chiM" type="number" min="0" step="1" value="1">
+                  <div class="hint">填写则给出任务成功概率 P(X≤m)</div>
+                </div>
+                <div></div>
+              </div>
+            </div>
+
             <div class="actions">
               <button class="primary" type="submit">计算</button>
               <button class="secondary" type="button" id="chiResetBtn">恢复示例</button>
@@ -1695,7 +1878,56 @@
               <div class="badge neutral" id="chiBadge">CALC</div>
             </div>
             <div class="metrics" id="chiMetrics"></div>
+            <div class="chi-pmf" id="chiPmf" hidden></div>
             <div class="warning" id="chiWarn" hidden></div>
+          </div>
+        </section>
+      </section>
+    </section>
+
+    <section class="page" id="distPage">
+      <section class="main">
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">统计分布</h2>
+            <div class="panel-note">指数分布 · 正态分布 · 威布尔分布 — 密度函数、累计概率函数与分布曲线</div>
+          </div>
+
+          <div class="dist-tabs" id="distTabs">
+            <button class="dist-tab active" type="button" data-dist="exp">指数分布</button>
+            <button class="dist-tab" type="button" data-dist="norm">正态分布</button>
+            <button class="dist-tab" type="button" data-dist="weib">威布尔分布</button>
+          </div>
+
+          <div class="dist-body">
+            <div class="dist-side">
+              <div class="dist-params" id="distParams"></div>
+
+              <div class="formula-block">
+                <div class="formula-title">概率密度函数 PDF</div>
+                <div class="formula" id="distPdfFormula"></div>
+              </div>
+              <div class="formula-block">
+                <div class="formula-title">累计概率函数 CDF</div>
+                <div class="formula" id="distCdfFormula"></div>
+              </div>
+              <div class="formula-block" id="distExtraBlock" hidden>
+                <div class="formula-title" id="distExtraTitle"></div>
+                <div class="formula" id="distExtraFormula"></div>
+              </div>
+            </div>
+
+            <div class="dist-chart-wrap">
+              <div class="dist-chart-toolbar">
+                <div class="dist-toggle" id="distViewToggle">
+                  <button type="button" data-view="pdf" class="active">PDF</button>
+                  <button type="button" data-view="cdf">CDF</button>
+                  <button type="button" data-view="both">两者</button>
+                </div>
+              </div>
+              <div class="dist-chart" id="distChart"></div>
+              <div class="dist-legend" id="distLegend"></div>
+            </div>
           </div>
         </section>
       </section>
@@ -2532,10 +2764,12 @@
       document.getElementById("chiMtbfGroup").hidden = mode !== "mtbf";
       document.getElementById("chiVarGroup").hidden = mode !== "variance";
       document.getElementById("chiQuantGroup").hidden = mode !== "quantile";
+      document.getElementById("chiPoissonGroup").hidden = mode !== "poisson";
       const names = {
         mtbf: "寿命型 MTBF 置信下限（指数分布 χ² 法）",
         variance: "正态方差 σ² 置信区间（χ² 法）",
-        quantile: "χ² 分位数 / 临界值查询"
+        quantile: "χ² 分位数 / 临界值查询",
+        poisson: "泊松分布：概率与可靠度"
       };
       document.getElementById("chiModeName").textContent = names[mode];
     }
@@ -2550,11 +2784,14 @@
       const badge = document.getElementById("chiBadge");
       const metrics = document.getElementById("chiMetrics");
       const warn = document.getElementById("chiWarn");
+      const chiPmf = document.getElementById("chiPmf");
       const digits = Number(document.getElementById("chiDigits").value);
       const num = (x) => (Number.isFinite(x) ? Number(x).toFixed(digits) : "—");
       try {
         const mode = chiModeSel.value;
         warn.hidden = true;
+        chiPmf.hidden = true;
+        chiPmf.innerHTML = "";
         if (mode === "mtbf") {
           const T = Number(document.getElementById("chiT").value);
           const r = Number(document.getElementById("chir").value);
@@ -2614,6 +2851,45 @@
           metrics.innerHTML = m;
           warn.hidden = false;
           warn.textContent = "依据：(n−1)s²/σ² ~ χ²(n−1)。σ² 的 (1−α) 双侧置信区间为 [(n−1)s²/χ²_{1−α/2}, (n−1)s²/χ²_{α/2}]。";
+        } else if (mode === "poisson") {
+          const lambda = Number(document.getElementById("chiLambda").value);
+          const t = Number(document.getElementById("chiTp").value);
+          const mRaw = document.getElementById("chiM").value.trim();
+          const m = mRaw === "" ? null : Number(mRaw);
+          if (!(lambda >= 0)) throw new Error("平均发生率 λ 必须非负");
+          if (!(t >= 0)) throw new Error("任务时间 t 必须非负");
+          if (m !== null && (!Number.isInteger(m) || m < 0)) throw new Error("允许故障数 m 必须为非负整数");
+          const mu = lambda * t;
+          const Rt = Math.exp(-mu);
+          heroLabel.innerHTML = "任务可靠度 R(t) = e<sup>−μ</sup>";
+          hero.textContent = (Rt * 100).toFixed(digits) + "%";
+          badge.className = "badge neutral";
+          badge.textContent = "CALC";
+          const Kmax = Math.min(60, Math.max(m !== null ? m : 0, Math.ceil(mu + 4 * Math.sqrt(mu) + 6), 8));
+          const pmf = [Math.exp(-mu)];
+          for (let i = 1; i <= Kmax; i += 1) pmf[i] = pmf[i - 1] * mu / i;
+          let cum = 0, tableRows = "";
+          for (let i = 0; i <= Kmax; i += 1) {
+            cum += pmf[i];
+            const hl = (m !== null && i === m) ? " class=\"chi-pmf-hl\"" : "";
+            tableRows += `<tr${hl}><td>k = ${i}</td><td>${pmf[i].toFixed(digits + 2)}</td><td>${Math.min(cum, 1).toFixed(digits + 2)}</td></tr>`;
+          }
+          let rows = "";
+          rows += chiMetric("平均发生率 λ", num(lambda) + " /单位时间");
+          rows += chiMetric("任务时间 t", num(t) + " 单位");
+          rows += chiMetric("期望故障数 μ = λt", num(mu));
+          rows += chiMetric("任务可靠度 R(t)", (Rt * 100).toFixed(digits) + "%");
+          if (m !== null) {
+            let pLe = 0; for (let i = 0; i <= m; i += 1) pLe += pmf[i];
+            const pGt = 1 - pLe;
+            rows += chiMetric("任务成功概率 P(X≤" + m + ")", (pLe * 100).toFixed(digits) + "%");
+            rows += chiMetric("任务失败概率 P(X>" + m + ")", (pGt * 100).toFixed(digits) + "%");
+          }
+          metrics.innerHTML = rows;
+          chiPmf.hidden = false;
+          chiPmf.innerHTML = `<table><caption>泊松分布 P(X=k) 与累积 P(X≤k)（μ = ${num(mu)}）</caption><thead><tr><th>事件数 k</th><th>P(X=k)</th><th>累积 P(X≤k)</th></tr></thead><tbody>${tableRows}</tbody></table>`;
+          warn.hidden = false;
+          warn.textContent = "依据：单位时间故障数服从泊松分布 P(X=k) = e^{−μ} μ^k / k!，μ = λt；任务可靠度 R(t) = P(X=0) = e^{−μ}。";
         } else {
           const k = Number(document.getElementById("chiK").value);
           const p = parseRatio(document.getElementById("chiP").value, "累积概率 p");
@@ -2636,6 +2912,8 @@
         hero.textContent = "—";
         heroLabel.textContent = "计算出错";
         metrics.innerHTML = "";
+        chiPmf.hidden = true;
+        chiPmf.innerHTML = "";
         badge.className = "badge fail";
         badge.textContent = "ERROR";
         warn.hidden = false;
@@ -2656,6 +2934,9 @@
       document.getElementById("chiVarConf").value = "90%";
       document.getElementById("chiK").value = "10";
       document.getElementById("chiP").value = "0.95";
+      document.getElementById("chiLambda").value = "0.001";
+      document.getElementById("chiTp").value = "100";
+      document.getElementById("chiM").value = "1";
       document.getElementById("chiDigits").value = "4";
       chiShowGroups();
       calculateChi();
@@ -2676,6 +2957,252 @@
     loadMaintainSample.click();
     chiShowGroups();
     calculateChi();
+
+    /* ===================== 统计分布模块 ===================== */
+    const distPageEl = document.getElementById("distPage");
+    const distTabsEl = document.getElementById("distTabs");
+    const distParamsEl = document.getElementById("distParams");
+    const distPdfFormulaEl = document.getElementById("distPdfFormula");
+    const distCdfFormulaEl = document.getElementById("distCdfFormula");
+    const distExtraBlockEl = document.getElementById("distExtraBlock");
+    const distExtraTitleEl = document.getElementById("distExtraTitle");
+    const distExtraFormulaEl = document.getElementById("distExtraFormula");
+    const distChartEl = document.getElementById("distChart");
+    const distLegendEl = document.getElementById("distLegend");
+    const distViewToggleEl = document.getElementById("distViewToggle");
+
+    const distState = { current: "exp", view: "pdf" };
+
+    function fmtN(v) {
+      if (!Number.isFinite(v)) return "—";
+      return Number(v.toPrecision(6)).toString();
+    }
+    function fmtAxis(v) {
+      if (v === 0) return "0";
+      const a = Math.abs(v);
+      if (a >= 100) return v.toFixed(0);
+      if (a >= 1) return v.toFixed(2);
+      if (a >= 0.01) return v.toFixed(2);
+      return v.toExponential(1);
+    }
+
+    const DIST = {
+      exp: {
+        label: "指数分布",
+        params: [
+          { id: "lam", label: "失效率 λ", def: 0.5, step: "any", hint: "平均寿命 θ = 1/λ = 2.000" }
+        ],
+        domain: (p) => [0, 6 / p.lam],
+        pdf: (p) => (x) => p.lam * Math.exp(-p.lam * x),
+        cdf: (p) => (x) => 1 - Math.exp(-p.lam * x),
+        pdfFormula: (p) => `f(x) = ${fmtN(p.lam)} · e<sup>−${fmtN(p.lam)}·x</sup>， x ≥ 0`,
+        cdfFormula: (p) => `F(x) = 1 − e<sup>−${fmtN(p.lam)}·x</sup>， x ≥ 0`,
+        extra: { title: "可靠度函数 R(x)", formula: (p) => `R(x) = e<sup>−${fmtN(p.lam)}·x</sup>` },
+        markers: (p) => [{ x: 1 / p.lam, label: "θ=1/λ" }]
+      },
+      norm: {
+        label: "正态分布",
+        params: [
+          { id: "mu", label: "均值 μ", def: 0, step: "any" },
+          { id: "sigma", label: "标准差 σ", def: 1, step: "any", hint: "σ > 0" }
+        ],
+        domain: (p) => [p.mu - 4 * p.sigma, p.mu + 4 * p.sigma],
+        pdf: (p) => (x) => (1 / (p.sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-((x - p.mu) ** 2) / (2 * p.sigma * p.sigma)),
+        cdf: (p) => (x) => normalCdf(x, p.mu, p.sigma),
+        pdfFormula: (p) => `f(x) = 1 / (σ·√(2π)) · e<sup>−(x−μ)² / (2σ²)</sup>`,
+        cdfFormula: (p) => `F(x) = Φ( (x − μ) / σ )`,
+        extra: { title: "可靠度函数 R(t)", formula: (p) => `R(t) = 1 − Φ( (t − μ) / σ )` },
+        markers: (p) => [{ x: p.mu, label: "μ" }, { x: p.mu + p.sigma, label: "μ+σ" }, { x: p.mu - p.sigma, label: "μ−σ" }]
+      },
+      weib: {
+        label: "威布尔分布",
+        params: [
+          { id: "beta", label: "形状参数 β", def: 1.5, step: "any", hint: "β > 0；β=1 退化为指数" },
+          { id: "eta", label: "尺度参数 η", def: 1, step: "any", hint: "η > 0（特征寿命）" }
+        ],
+        domain: (p) => [0, Math.max(p.eta * 1.8, 3)],
+        pdf: (p) => (x) => x <= 0 ? 0 : (p.beta / p.eta) * Math.pow(x / p.eta, p.beta - 1) * Math.exp(-Math.pow(x / p.eta, p.beta)),
+        cdf: (p) => (x) => x <= 0 ? 0 : 1 - Math.exp(-Math.pow(x / p.eta, p.beta)),
+        pdfFormula: (p) => `f(x) = (β/η)·(x/η)<sup>β−1</sup> · e<sup>−(x/η)<sup>β</sup></sup>， x ≥ 0`,
+        cdfFormula: (p) => `F(x) = 1 − e<sup>−(x/η)<sup>β</sup></sup>， x ≥ 0`,
+        extra: { title: "可靠度函数 R(x)", formula: (p) => `R(x) = e<sup>−(x/η)<sup>β</sup></sup>` },
+        markers: (p) => [{ x: p.eta, label: "η" }]
+      }
+    };
+
+    function getDistParams() {
+      const cfg = DIST[distState.current];
+      const p = {};
+      cfg.params.forEach((pr) => {
+        const el = document.getElementById("dist_" + pr.id);
+        let v = parseFloat(el ? el.value : pr.def);
+        if (!Number.isFinite(v)) v = pr.def;
+        p[pr.id] = v;
+      });
+      return p;
+    }
+
+    function renderDistParams() {
+      const cfg = DIST[distState.current];
+      let html = "";
+      cfg.params.forEach((pr) => {
+        html += `<div class="p-field">
+          <label for="dist_${pr.id}">${pr.label}</label>
+          <input id="dist_${pr.id}" type="number" step="${pr.step}" value="${pr.def}">
+          ${pr.hint ? `<div class="hint">${pr.hint}</div>` : ""}
+        </div>`;
+      });
+      distParamsEl.innerHTML = html;
+      cfg.params.forEach((pr) => {
+        const el = document.getElementById("dist_" + pr.id);
+        el.addEventListener("input", () => { renderDistFormulas(); drawDistChart(); });
+      });
+    }
+
+    function renderDistFormulas() {
+      const cfg = DIST[distState.current];
+      const p = getDistParams();
+      distPdfFormulaEl.innerHTML = cfg.pdfFormula(p);
+      distCdfFormulaEl.innerHTML = cfg.cdfFormula(p);
+      if (cfg.extra) {
+        distExtraBlockEl.hidden = false;
+        distExtraTitleEl.textContent = cfg.extra.title;
+        distExtraFormulaEl.innerHTML = cfg.extra.formula(p);
+      } else {
+        distExtraBlockEl.hidden = true;
+      }
+    }
+
+    function renderDistLegend() {
+      const v = distState.view;
+      if (v === "pdf") distLegendEl.innerHTML = `<span class="lg-item"><span class="lg-swatch pdf"></span>概率密度 f(x)</span>`;
+      else if (v === "cdf") distLegendEl.innerHTML = `<span class="lg-item"><span class="lg-swatch cdf"></span>累计概率 F(x)</span>`;
+      else distLegendEl.innerHTML = `<span class="lg-item"><span class="lg-swatch pdf"></span>概率密度 f(x)</span><span class="lg-item"><span class="lg-swatch cdf"></span>累计概率 F(x)</span>`;
+    }
+
+    function drawDistChart() {
+      const cfg = DIST[distState.current];
+      const p = getDistParams();
+      const view = distState.view;
+      const dom = cfg.domain(p);
+      const xmin = dom[0], xmax = dom[1];
+      const W = 680, H = 360, mL = 52, mR = 18, mT = 18, mB = 38;
+      const pw = W - mL - mR, ph = H - mT - mB;
+      const N = 260;
+      const xs = new Array(N + 1), pdfVals = new Array(N + 1), cdfVals = new Array(N + 1);
+      let pdfPeak = 0;
+      const pdfFn = cfg.pdf(p), cdfFn = cfg.cdf(p);
+      for (let i = 0; i <= N; i++) {
+        const x = xmin + (xmax - xmin) * i / N;
+        const pv = pdfFn(x), cv = cdfFn(x);
+        xs[i] = x; pdfVals[i] = pv; cdfVals[i] = cv;
+        if (pv > pdfPeak) pdfPeak = pv;
+      }
+      const yMax = view === "cdf" ? 1.05 : (view === "pdf" ? pdfPeak * 1.12 : Math.max(pdfPeak * 1.12, 1.05));
+      const X = (x) => mL + (x - xmin) / (xmax - xmin) * pw;
+      const Y = (y) => mT + ph - (y / yMax) * ph;
+
+      let grid = "", yticks = "", xticks = "";
+      const ySteps = 5;
+      for (let i = 0; i <= ySteps; i++) {
+        const yv = yMax * i / ySteps, yy = Y(yv);
+        grid += `<line class="dist-grid" x1="${mL}" y1="${yy.toFixed(1)}" x2="${(mL + pw).toFixed(1)}" y2="${yy.toFixed(1)}"/>`;
+        yticks += `<text class="dist-tick" x="${mL - 8}" y="${(yy + 4).toFixed(1)}" text-anchor="end">${fmtAxis(yv)}</text>`;
+      }
+      const xSteps = 6;
+      for (let i = 0; i <= xSteps; i++) {
+        const xv = xmin + (xmax - xmin) * i / xSteps, xx = X(xv);
+        grid += `<line class="dist-grid" x1="${xx.toFixed(1)}" y1="${mT}" x2="${xx.toFixed(1)}" y2="${mT + ph}"/>`;
+        xticks += `<text class="dist-tick" x="${xx.toFixed(1)}" y="${mT + ph + 18}" text-anchor="middle">${fmtAxis(xv)}</text>`;
+      }
+      const axes = `<line class="dist-axis" x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT + ph}"/><line class="dist-axis" x1="${mL}" y1="${mT + ph}" x2="${mL + pw}" y2="${mT + ph}"/>`;
+
+      function pathOf(vals) {
+        let d = "";
+        for (let i = 0; i <= N; i++) d += (i === 0 ? "M" : "L") + X(xs[i]).toFixed(1) + " " + Y(vals[i]).toFixed(1) + " ";
+        return d.trim();
+      }
+      const pdfPath = pathOf(pdfVals), cdfPath = pathOf(cdfVals);
+      const pdfFill = pdfPath + ` L ${X(xmax).toFixed(1)} ${Y(0).toFixed(1)} L ${X(xmin).toFixed(1)} ${Y(0).toFixed(1)} Z`;
+
+      let markerSvg = "";
+      (cfg.markers ? cfg.markers(p) : []).forEach((mk) => {
+        if (mk.x < xmin || mk.x > xmax) return;
+        const xx = X(mk.x).toFixed(1);
+        markerSvg += `<line class="dist-marker" x1="${xx}" y1="${mT}" x2="${xx}" y2="${mT + ph}"/>`;
+        markerSvg += `<text class="dist-marker-label" x="${xx}" y="${mT - 4}" text-anchor="middle">${mk.label}</text>`;
+      });
+
+      let layers = "";
+      if (view === "pdf" || view === "both") layers += `<path class="dist-pdf-area" d="${pdfFill}"/><path class="dist-pdf-line" d="${pdfPath}"/>`;
+      if (view === "cdf" || view === "both") layers += `<path class="dist-cdf-line" d="${cdfPath}"/>`;
+
+      distChartEl.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="dist-svg">
+        <defs><linearGradient id="distPdfGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" class="dist-grad-top"/><stop offset="100%" class="dist-grad-bottom"/></linearGradient></defs>
+        ${grid}${axes}${yticks}${xticks}${markerSvg}${layers}
+        <g class="dist-hover" id="distHover" style="display:none">
+          <line class="dist-hover-line" x1="0" y1="${mT}" x2="0" y2="${mT + ph}"/>
+          <circle class="dist-hover-dot" r="4.5"/>
+          <text class="dist-hover-text" x="0" y="0"></text>
+        </g>
+        <rect class="dist-capture" x="${mL}" y="${mT}" width="${pw}" height="${ph}" fill="transparent" style="pointer-events:all" id="distCapture"/>
+      </svg>`;
+
+      const svgEl = distChartEl.querySelector("svg");
+      const capture = distChartEl.querySelector("#distCapture");
+      const hover = distChartEl.querySelector("#distHover");
+      const hLine = hover.querySelector(".dist-hover-line");
+      const hDot = hover.querySelector(".dist-hover-dot");
+      const hText = hover.querySelector(".dist-hover-text");
+      function onMove(e) {
+        const rect = svgEl.getBoundingClientRect();
+        let vx = (e.clientX - rect.left) / rect.width * W;
+        if (vx < mL) vx = mL; if (vx > mL + pw) vx = mL + pw;
+        const xv = xmin + (vx - mL) / pw * (xmax - xmin);
+        const ci = Math.max(0, Math.min(N, Math.round((xv - xmin) / (xmax - xmin) * N)));
+        const px = X(xs[ci]);
+        const yv = (view === "cdf") ? cdfVals[ci] : pdfVals[ci];
+        const py = Y(yv);
+        hover.style.display = "";
+        hLine.setAttribute("x1", px.toFixed(1)); hLine.setAttribute("x2", px.toFixed(1));
+        hDot.setAttribute("cx", px.toFixed(1)); hDot.setAttribute("cy", py.toFixed(1));
+        let label = `x=${fmtAxis(xs[ci])}`;
+        if (view === "pdf" || view === "both") label += `  f=${fmtAxis(pdfVals[ci])}`;
+        if (view === "cdf" || view === "both") label += `  F=${fmtAxis(cdfVals[ci])}`;
+        hText.textContent = label;
+        let tx = px + 9, ty = py - 9;
+        if (ty < mT + 14) ty = py + 18;
+        if (tx > mL + pw - 90) tx = px - 9 - 90;
+        hText.setAttribute("x", tx.toFixed(1)); hText.setAttribute("y", ty.toFixed(1));
+      }
+      capture.addEventListener("mousemove", onMove);
+      capture.addEventListener("mouseleave", () => { hover.style.display = "none"; });
+    }
+
+    function renderDistAll() {
+      renderDistParams();
+      renderDistFormulas();
+      renderDistLegend();
+      drawDistChart();
+    }
+
+    distTabsEl.querySelectorAll(".dist-tab").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        distState.current = btn.dataset.dist;
+        distTabsEl.querySelectorAll(".dist-tab").forEach((b) => b.classList.toggle("active", b === btn));
+        renderDistAll();
+      });
+    });
+    distViewToggleEl.querySelectorAll("button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        distState.view = btn.dataset.view;
+        distViewToggleEl.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b === btn));
+        renderDistLegend();
+        drawDistChart();
+      });
+    });
+
+    renderDistAll();
   </script>
 </body>
 </html>
