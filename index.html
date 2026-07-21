@@ -132,6 +132,17 @@
   }
   .icon-btn:hover { color: var(--accent-strong); box-shadow: 0 0 0 4px var(--accent-soft); transform: translateY(-1px); }
   .icon-btn svg { width: 19px; height: 19px; }
+  /* hamburger (mobile only) */
+  .menu-btn { display: none; }
+  .menu-btn svg { width: 18px; height: 18px; }
+  /* drawer mask (mobile) */
+  .drawer-mask {
+    display: none; position: fixed; inset: 0; z-index: 49;
+    background: rgba(8, 14, 32, 0.42);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    opacity: 0; transition: opacity .3s ease;
+  }
+  .app.nav-open .drawer-mask { display: block; opacity: 1; }
   [data-theme="dark"] .icon-sun { display: none; }
   [data-theme="light"] .icon-moon { display: none; }
 
@@ -162,6 +173,47 @@
   .cols-2 { grid-template-columns: 1fr 1fr; }
   .cols-3 { grid-template-columns: 1.05fr 1fr 1.1fr; }
   @media (max-width: 1080px) { .cols-3, .cols-2 { grid-template-columns: 1fr; } }
+
+  /* ===== responsive: tablet & phone ===== */
+  @media (max-width: 860px) {
+    .menu-btn { display: grid; }
+    .topnav { margin: 10px 12px 0; padding: 9px 12px; gap: 12px; }
+    .brand { border-right: none; padding-right: 0; }
+    .brand .sub { display: none; }
+    .brand .name { font-size: 14px; }
+    .top-cats { display: none; }
+
+    .app { flex-direction: column; gap: 12px; padding: 12px 11px 26px; }
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 50;
+      width: 80vw; max-width: 300px; margin: 0;
+      border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+      max-height: none; overflow: auto;
+      transform: translateX(-106%);
+      transition: transform .32s cubic-bezier(.2,.8,.25,1);
+      box-shadow: 0 18px 50px rgba(8, 14, 32, .35);
+    }
+    .app.nav-open .sidebar { transform: none; }
+    .main-scroll { width: 100%; min-width: 0; }
+    .card { padding: 18px 15px 20px; }
+    .hero-banner { padding: 20px 16px; }
+    .hero-banner h1 { font-size: 21px; }
+    .hero-banner p { font-size: 13px; }
+    .metrics { grid-template-columns: 1fr; }
+    .cols-2, .cols-3 { grid-template-columns: 1fr; }
+    .field-grid { grid-template-columns: 1fr; }
+    .tool-grid { grid-template-columns: 1fr; }
+    .dist-tabs { flex-wrap: wrap; }
+    .card-head { flex-wrap: wrap; }
+  }
+  @media (max-width: 480px) {
+    .topnav { margin: 8px 8px 0; padding: 8px 10px; }
+    .app { padding: 10px 8px 20px; gap: 10px; }
+    .card { padding: 15px 12px 17px; }
+    .hero-banner h1 { font-size: 19px; }
+    .ci-bar { height: 58px; }
+    .modal-card { padding: 20px 18px; }
+  }
   .card { padding: 22px 22px 24px; }
   .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
   .card-title { font-size: 14.5px; font-weight: 650; letter-spacing: .02em; }
@@ -339,6 +391,9 @@
 
   <!-- ===== Top Nav ===== -->
   <header class="topnav glass">
+    <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="打开菜单" title="菜单">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
     <div class="brand">
       <svg class="mark" viewBox="0 0 48 48" fill="none">
         <defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a90d9"/><stop offset="1" stop-color="#46c4bd"/></linearGradient></defs>
@@ -399,6 +454,7 @@
         GJB 2072 方法9
       </button>
     </aside>
+    <div class="drawer-mask" id="drawerMask"></div>
 
     <!-- ===== Main ===== -->
     <main class="main-scroll">
@@ -2115,6 +2171,13 @@
     const sideItems = document.querySelectorAll(".side-item");
     const views = document.querySelectorAll(".view");
     const mainScroll = document.querySelector(".main-scroll");
+    const appEl = document.querySelector(".app");
+    const mqMobile = window.matchMedia("(max-width: 860px)");
+    function applySidebarVisibility(cat) {
+      sideItems.forEach((s) => {
+        s.style.display = (mqMobile.matches || s.dataset.cat === cat) ? "" : "none";
+      });
+    }
 
     function activateView(viewId) {
       views.forEach((v) => v.classList.toggle("active", v.id === "view-" + viewId));
@@ -2125,17 +2188,30 @@
     topCats.forEach((c) => c.addEventListener("click", () => {
       const cat = c.dataset.cat;
       topCats.forEach((x) => x.classList.toggle("active", x === c));
-      sideItems.forEach((s) => { s.style.display = s.dataset.cat === cat ? "" : "none"; });
+      applySidebarVisibility(cat);
       const first = [...sideItems].find((s) => s.dataset.cat === cat);
       if (first) activateView(first.dataset.view);
     }));
-    sideItems.forEach((s) => s.addEventListener("click", () => activateView(s.dataset.view)));
+    sideItems.forEach((s) => s.addEventListener("click", () => {
+      activateView(s.dataset.view);
+      if (appEl) appEl.classList.remove("nav-open");
+    }));
     document.querySelectorAll(".tool-card").forEach((t) => t.addEventListener("click", () => {
       const cat = catFor(t.dataset.view);
       topCats.forEach((x) => x.classList.toggle("active", x.dataset.cat === cat));
-      sideItems.forEach((s) => { s.style.display = s.dataset.cat === cat ? "" : "none"; });
+      applySidebarVisibility(cat);
       activateView(t.dataset.view);
     }));
+    // mobile drawer
+    const menuBtn = document.getElementById("menuBtn");
+    const drawerMask = document.getElementById("drawerMask");
+    if (menuBtn) menuBtn.addEventListener("click", () => { if (appEl) appEl.classList.toggle("nav-open"); });
+    if (drawerMask) drawerMask.addEventListener("click", () => { if (appEl) appEl.classList.remove("nav-open"); });
+    window.addEventListener("resize", () => {
+      const activeCatEl = [...topCats].find((x) => x.classList.contains("active"));
+      applySidebarVisibility(activeCatEl ? activeCatEl.dataset.cat : "overview");
+    });
+
     function catFor(viewId) {
       const map = { overview: "overview", lower: "reliability", scheme: "reliability", chisq: "distribution", dist: "distribution", sample: "distribution", maintain: "maintain" };
       return map[viewId] || "overview";
@@ -2265,7 +2341,7 @@
 
     // default to overview
     topCats.forEach((x) => x.classList.toggle("active", x.dataset.cat === "overview"));
-    sideItems.forEach((s) => { s.style.display = s.dataset.cat === "overview" ? "" : "none"; });
+    applySidebarVisibility("overview");
     activateView("overview");
   </script>
 </body>
