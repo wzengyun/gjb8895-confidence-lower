@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>六性统计计算台 · 可靠性数理统计工具</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 48 48%27%3E%3Crect width=%2748%27 height=%2748%27 rx=%2712%27 fill=%27%234a90d9%27/%3E%3Cpath d=%27M10 31 Q18 13 24 24 T38 17%27 stroke=%27white%27 stroke-width=%273.4%27 fill=%27none%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2724%27 cy=%2724%27 r=%273.4%27 fill=%27white%27/%3E%3C/svg%3E" />
 <style>
   :root {
     --bg-1: #eef2f9;
@@ -69,10 +70,12 @@
     background: linear-gradient(160deg, var(--bg-1), var(--bg-2));
     background-attachment: fixed;
     min-height: 100vh;
+    line-height: 1.7;
     -webkit-font-smoothing: antialiased;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.01em;
     transition: background .5s ease, color .35s ease;
+    animation: pageIn .5s ease both;
   }
 
   /* ===== ambient light blobs ===== */
@@ -167,6 +170,10 @@
   .view { display: none; animation: fadeUp .42s ease both; }
   .view.active { display: block; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  }
 
   /* ===== cards / grid ===== */
   .grid { display: grid; gap: 18px; }
@@ -289,7 +296,7 @@
 
   .formula-box { background: var(--glass-soft); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 14px 16px; margin-top: 12px; }
   .formula-box .ft { font-size: 11.5px; color: var(--muted); margin-bottom: 6px; letter-spacing: .04em; }
-  .formula { font-size: 14.5px; color: var(--text); line-height: 1.8; }
+  .formula { font-size: 14.5px; color: var(--text); line-height: 1.8; letter-spacing: .01em; word-break: break-word; overflow-wrap: anywhere; }
   .formula sup { font-size: .72em; }
   .formula sub { font-size: .72em; }
   .math-var { font-style: italic; color: var(--accent-strong); }
@@ -378,6 +385,7 @@
   .modal-body { font-size: 13px; }
 
   .footer { text-align: center; color: var(--muted); font-size: 12px; padding: 28px 0 14px; position: relative; z-index: 1; }
+  .footer-sub { margin-top: 6px; font-size: 11px; opacity: .82; }
   .hidden { display: none !important; }
 
   ::-webkit-scrollbar { width: 9px; height: 9px; }
@@ -816,7 +824,11 @@
     </main>
   </div>
 
-  <div class="footer">六性统计计算台 · 本地离线计算 · 依据 GJB 8895 / GJB 2072-94 / GJB 899A 等标准</div>
+  <div class="footer">
+    <div>六性统计计算台 · 本地离线计算 · 所有结果均在浏览器内实时计算，数据不上传</div>
+    <div class="footer-sub">依据 GJB 8895 / GJB 2072-94 / GJB 899A 等标准 · 公式与算法仅供工程估算参考，关键判决以正式试验大纲与标准原文为准</div>
+    <div class="footer-sub">© 2026 六性统计计算台</div>
+  </div>
 
   <!-- ===== Modal ===== -->
   <div class="modal-mask" id="modalMask">
@@ -1832,6 +1844,15 @@
       }
     };
 
+    // 公式数学变量斜体美化（离线、无外部库）：临时抽取 sup/sub 标签，包裹变量/希腊字母，再还原标签
+    function prettyFormula(html) {
+      const tags = [];
+      let s = html.replace(/<\/?(?:sup|sub)>/g, (t) => { tags.push(t); return "[[" + (tags.length - 1) + "]]"; });
+      s = s.replace(/([A-Za-zμσβηαθΦΓγΣπ√∞])/g, '<span class="math-var">$1</span>');
+      s = s.replace(/\[\[(\d+)\]\]/g, (m, i) => tags[+i]);
+      return s;
+    }
+
     function getDistParams() {
       const cfg = DIST[distState.current];
       const p = {};
@@ -1875,12 +1896,12 @@
     function renderDistFormulas() {
       const cfg = DIST[distState.current];
       const p = getDistParams();
-      distPdfFormulaEl.innerHTML = cfg.pdfFormula(p);
-      distCdfFormulaEl.innerHTML = cfg.cdfFormula(p);
+      distPdfFormulaEl.innerHTML = prettyFormula(cfg.pdfFormula(p));
+      distCdfFormulaEl.innerHTML = prettyFormula(cfg.cdfFormula(p));
       if (cfg.extra) {
         distExtraBlockEl.hidden = false;
         distExtraTitleEl.textContent = cfg.extra.title;
-        distExtraFormulaEl.innerHTML = cfg.extra.formula(p);
+        distExtraFormulaEl.innerHTML = prettyFormula(cfg.extra.formula(p));
       } else {
         distExtraBlockEl.hidden = true;
       }
