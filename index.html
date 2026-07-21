@@ -386,6 +386,32 @@
 
   .footer { text-align: center; color: var(--muted); font-size: 12px; padding: 28px 0 14px; position: relative; z-index: 1; }
   .footer-sub { margin-top: 6px; font-size: 11px; opacity: .82; }
+
+  /* ===== plain-language module description ===== */
+  .card-desc { font-size: 12px; color: var(--muted); line-height: 1.68; margin: -8px 0 16px; }
+
+  /* ===== term tooltip ===== */
+  .tip { border-bottom: 1px dotted var(--accent); cursor: help; position: relative; white-space: nowrap; }
+  .tip::after {
+    content: attr(data-tip); position: absolute; left: 50%; bottom: 148%; transform: translateX(-50%);
+    background: #1f2733; color: #fff; font-size: 11.5px; line-height: 1.55; padding: 6px 9px; border-radius: 7px;
+    width: max-content; max-width: 250px; white-space: normal; text-align: left;
+    box-shadow: 0 6px 18px rgba(0,0,0,.30); opacity: 0; pointer-events: none; transition: opacity .18s ease; z-index: 80;
+  }
+  .tip::before {
+    content: ""; position: absolute; left: 50%; bottom: 148%; transform: translateX(-50%) translateY(7px);
+    border: 6px solid transparent; border-top-color: #1f2733; opacity: 0; transition: opacity .18s ease; z-index: 80;
+  }
+  .tip:hover::after, .tip:hover::before { opacity: 1; }
+
+  /* ===== toast feedback ===== */
+  .toast {
+    position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%) translateY(18px);
+    background: #1f2733; color: #fff; font-size: 13px; padding: 9px 16px; border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.30); opacity: 0; pointer-events: none;
+    transition: opacity .28s ease, transform .28s ease; z-index: 90;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .hidden { display: none !important; }
 
   ::-webkit-scrollbar { width: 9px; height: 9px; }
@@ -396,6 +422,7 @@
 <body>
   <div class="bg-blobs"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span></div>
   <div id="loadingBar"></div>
+  <div class="toast" id="toast"></div>
 
   <!-- ===== Top Nav ===== -->
   <header class="topnav glass">
@@ -520,10 +547,11 @@
         <div class="grid cols-3">
           <div class="card glass">
             <div class="card-head"><div><div class="card-title">参数输入</div><div class="card-sub">成败型二项置信估计</div></div></div>
+            <div class="card-desc">根据试验成功 / 失败数，给出指标达到门限的可信程度下限（Clopper‑Pearson 精确 与 Wilson 近似）。</div>
             <form id="calcForm">
               <div class="field-grid">
                 <div class="field full">
-                  <label for="metric">评价指标</label>
+                  <label for="metric">评价指标 <span class="tip" data-tip="要评估的可靠性指标，如故障检测率 FDR、故障隔离率 FIR">ⓘ</span></label>
                   <select id="metric">
                     <option value="FDR">故障检测率 FDR</option>
                     <option value="FIR">故障隔离率 FIR</option>
@@ -533,9 +561,9 @@
                 </div>
                 <div class="field"><label for="sampleSize">样本量 n</label><input id="sampleSize" type="number" min="1" step="1" value="65"></div>
                 <div class="field"><label for="failures">失败数 F</label><input id="failures" type="number" min="0" step="1" value="2"></div>
-                <div class="field"><label for="confidence">置信度 C</label><input id="confidence" type="text" value="80%"></div>
-                <div class="field"><label for="target">最低可接受值</label><input id="target" type="text" value="90%"></div>
-                <div class="field"><label for="method">计算方法</label>
+                <div class="field"><label for="confidence">置信度 C <span class="tip" data-tip="区间包含真实指标值的可信概率，如 80% 表示有 80% 把握">ⓘ</span></label><input id="confidence" type="text" value="80%"></div>
+                <div class="field"><label for="target">最低可接受值 <span class="tip" data-tip="合同或标准规定的最低指标门限，结果高于它才算达标">ⓘ</span></label><input id="target" type="text" value="90%"></div>
+                <div class="field"><label for="method">计算方法 <span class="tip" data-tip="Clopper‑Pearson 为精确区间；Wilson 为近似，小样本更稳健">ⓘ</span></label>
                   <select id="method"><option value="exact">Clopper-Pearson 精确</option><option value="wilson">Wilson 近似</option></select>
                 </div>
                 <div class="field"><label for="intervalType">区间类型</label>
@@ -547,6 +575,7 @@
               </div>
               <div class="btn-row">
                 <button class="glass-btn primary" type="submit">计算</button>
+                <button class="glass-btn" id="loadLowerSample" type="button">载入示例</button>
                 <button class="glass-btn ghost" id="resetBtn" type="button">重置</button>
               </div>
             </form>
@@ -582,15 +611,17 @@
         <div class="grid cols-2">
           <div class="card glass">
             <div class="card-head"><div><div class="card-title">参数输入</div><div class="card-sub">GJB 8895 最低可接受值试验方案</div></div></div>
+            <div class="card-desc">给定最低可接受值与订购方风险，反算合格判定数 r* 与最小样本量 n。</div>
             <form id="schemeForm">
               <div class="field-grid">
-                <div class="field"><label for="q1Input">最低可接受值 q₁</label><input id="q1Input" type="text" value="90%"></div>
-                <div class="field"><label for="betaInput">订购方风险 β</label><input id="betaInput" type="text" value="10%"></div>
+                <div class="field"><label for="q1Input">最低可接受值 q₁ <span class="tip" data-tip="标准规定指标必须达到的门限，如 90%">ⓘ</span></label><input id="q1Input" type="text" value="90%"></div>
+                <div class="field"><label for="betaInput">订购方风险 β <span class="tip" data-tip="允许把不合格方案误判为合格的概率，如 10%">ⓘ</span></label><input id="betaInput" type="text" value="10%"></div>
                 <div class="field"><label for="mInput">故障模式库数量 M</label><input id="mInput" type="number" min="0" step="1" value="30"></div>
                 <div class="field"><label for="maxSearchN">最大搜索样本量</label><input id="maxSearchN" type="number" min="1" step="1" value="10000"></div>
               </div>
               <div class="btn-row">
                 <button class="glass-btn primary" type="submit">计算方案</button>
+                <button class="glass-btn" id="loadSchemeSample" type="button">载入示例</button>
                 <button class="glass-btn ghost" id="schemeResetBtn" type="button">重置</button>
               </div>
             </form>
@@ -625,9 +656,10 @@
         <div class="grid cols-2">
           <div class="card glass">
             <div class="card-head"><div><div class="card-title">卡方分布 · 参数输入</div></div></div>
+            <div class="card-desc">指数 / 正态寿命与泊松模型的置信下限、方差区间与 χ² 分位数查询。</div>
             <form id="chiForm">
               <div class="field full" style="margin-bottom:16px;">
-                <label for="chiMode">计算模式</label>
+                <label for="chiMode">计算模式 <span class="tip" data-tip="MTBF 下限用指数分布 χ² 法；方差区间用正态 χ² 法；还可查分位数或泊松可靠度">ⓘ</span></label>
                 <select id="chiMode">
                   <option value="mtbf">寿命型 MTBF 置信下限（指数分布 χ² 法）</option>
                   <option value="variance">正态方差 σ² 置信区间（χ² 法）</option>
@@ -662,6 +694,7 @@
               </div>
               <div class="btn-row">
                 <button class="glass-btn primary" type="submit">计算</button>
+                <button class="glass-btn" id="loadChiSample" type="button">载入示例</button>
                 <button class="glass-btn ghost" id="chiResetBtn" type="button">重置</button>
               </div>
             </form>
@@ -689,6 +722,7 @@
         <div class="grid cols-3">
           <div class="card glass">
             <div class="card-head"><div><div class="card-title">分布与参数</div><div class="card-sub">选择分布并调整参数</div></div></div>
+            <div class="card-desc">交互查看常用分布的概率密度（PDF）与累积（CDF）曲线，拖动滑块实时刷新。</div>
             <div class="dist-tabs" id="distTabs">
               <button class="dist-tab active" data-dist="exp" type="button">指数</button>
               <button class="dist-tab" data-dist="norm" type="button">正态</button>
@@ -698,7 +732,7 @@
             </div>
             <div id="distParams"></div>
             <div class="field full" style="margin-top:16px;">
-              <label>参数滑块（拖动实时刷新曲线）</label>
+              <label>参数滑块（拖动实时刷新曲线）<span class="tip" data-tip="拖动滑块改变所选分布的关键参数，下方曲线与公式同步更新">ⓘ</span></label>
               <div class="slider-wrap">
                 <input type="range" id="distSlider" min="0.1" max="3" step="0.05" value="0.5">
                 <span class="slider-val" id="distSliderVal">0.50</span>
@@ -742,20 +776,22 @@
         <div class="grid cols-2">
           <div class="card glass">
             <div class="card-head"><div><div class="card-title">样本数据输入</div><div class="card-sub">每行或逗号分隔一个数值</div></div></div>
+            <div class="card-desc">录入样本，一键得到 n、均值、标准差、极值、中位数等描述统计量。</div>
             <div class="field full">
               <label for="sampleName">样本名称（用于导出文件名）</label>
               <input id="sampleName" type="text" value="维修时间样本">
             </div>
             <div class="field full" style="margin-top:14px;">
-              <label for="sampleData">样本数据</label>
+              <label for="sampleData">样本数据 <span class="tip" data-tip="每行或逗号分隔一个数值，如维修时间（分钟）。两组可分别录入以便对比">ⓘ</span></label>
               <textarea id="sampleData" placeholder="例如：&#10;18, 22, 16, 25, 20, 19, 23, 17, 21, 24">18, 22, 16, 25, 20, 19, 23, 17, 21, 24
 12, 14, 11, 15, 13, 16, 14, 13, 15, 12</textarea>
             </div>
-            <div class="btn-row">
-              <button class="glass-btn primary" id="sampleCompute" type="button">统计并预览</button>
-              <button class="glass-btn" id="sampleExport" type="button">导出 CSV</button>
-              <button class="glass-btn ghost" id="sampleCopy" type="button">复制统计</button>
-            </div>
+              <div class="btn-row">
+                <button class="glass-btn primary" id="sampleCompute" type="button">统计并预览</button>
+                <button class="glass-btn" id="loadSampleExample" type="button">载入示例</button>
+                <button class="glass-btn" id="sampleExport" type="button">导出 CSV</button>
+                <button class="glass-btn ghost" id="sampleCopy" type="button">复制统计</button>
+              </div>
           </div>
 
           <div class="card glass" id="sampleResult">
@@ -773,12 +809,13 @@
         <div class="grid cols-2">
           <div class="card glass">
             <div class="card-head"><div><div class="card-title">维修性参数输入</div><div class="card-sub">GJB 2072-94 附录A 方法9</div></div></div>
+            <div class="card-desc">用维修时间样本做维修性达标判决：判断平均 / 最大修复时间是否满足合同要求。</div>
             <form id="maintainForm">
               <div class="field-grid">
                 <div class="field full"><label for="correctiveTimes">修复性维修时间（逗号分隔）</label><input id="correctiveTimes" type="text"></div>
                 <div class="field full"><label for="preventiveTimes">预防性维修时间（逗号分隔）</label><input id="preventiveTimes" type="text"></div>
-                <div class="field"><label for="betaMaintain">订购方风险 β</label><input id="betaMaintain" type="text" value="10%"></div>
-                <div class="field"><label for="percentileMaintain">最大修复时间百分位 p</label><input id="percentileMaintain" type="text" value="95%"></div>
+                <div class="field"><label for="betaMaintain">订购方风险 β <span class="tip" data-tip="允许把不达标产品误判为达标的概率，如 10%">ⓘ</span></label><input id="betaMaintain" type="text" value="10%"></div>
+                <div class="field"><label for="percentileMaintain">最大修复时间百分位 p <span class="tip" data-tip="要求的最大修复时间对应的百分位，如 95% 表示 95% 的修复不超过该值">ⓘ</span></label><input id="percentileMaintain" type="text" value="95%"></div>
                 <div class="field"><label for="fcInput">修复性权重 f_c</label><input id="fcInput" type="number" step="any" value="1"></div>
                 <div class="field"><label for="fpInput">预防性权重 f_p</label><input id="fpInput" type="number" step="any" value="1"></div>
                 <div class="field"><label for="mctInput">合同 M_ct</label><input id="mctInput" type="number" step="any" value="30"></div>
@@ -2205,6 +2242,7 @@
       sideItems.forEach((s) => s.classList.toggle("active", s.dataset.view === viewId));
       if (mainScroll) mainScroll.scrollTop = 0;
       window.scrollTo({ top: 0, behavior: "smooth" });
+      if (typeof saveInputs === "function") saveInputs();
     }
     topCats.forEach((c) => c.addEventListener("click", () => {
       const cat = c.dataset.cat;
@@ -2258,9 +2296,17 @@
     const loadingBar = document.getElementById("loadingBar");
     function showLoading() { loadingBar.classList.add("active"); }
     function hideLoading() { loadingBar.classList.remove("active"); }
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      if (!t) return;
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => t.classList.remove("show"), 1400);
+    }
     function withLoading(fn) {
       showLoading();
-      setTimeout(() => { try { if (fn) fn(); } finally { hideLoading(); } }, 420);
+      setTimeout(() => { try { if (fn) fn(); } finally { hideLoading(); showToast("已更新 ✓"); } }, 420);
     }
 
     // theme toggle
@@ -2352,18 +2398,105 @@
       calculateChi();
     });
 
+    /* ===================== 输入持久化 ===================== */
+    const STORE_KEY = "gjb-inputs-v2";
+    function getStored() { try { return JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch (e) { return null; } }
+    function saveInputs() {
+      try {
+        const data = getStored() || {};
+        document.querySelectorAll("input, select, textarea").forEach((el) => {
+          if (el.type === "submit" || el.type === "button" || !el.id) return;
+          data[el.id] = el.value;
+        });
+        data.__dist = distState.current;
+        data.__distView = distState.view;
+        const av = document.querySelector(".side-item.active");
+        if (av) data.__view = av.dataset.view;
+        localStorage.setItem(STORE_KEY, JSON.stringify(data));
+      } catch (e) {}
+    }
+    function applyStored(data) {
+      if (!data) return;
+      document.querySelectorAll("input, select, textarea").forEach((el) => {
+        if (el.type === "submit" || el.type === "button" || !el.id) return;
+        if (Object.prototype.hasOwnProperty.call(data, el.id)) el.value = data[el.id];
+      });
+      if (data.__dist && DIST[data.__dist]) distState.current = data.__dist;
+      if (data.__distView) distState.view = data.__distView;
+      distTabsEl.querySelectorAll(".dist-tab").forEach((b) => b.classList.toggle("active", b.dataset.dist === distState.current));
+      distViewToggleEl.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.view === distState.view));
+    }
+    function restoreInputs() {
+      const data = getStored(); if (!data) return;
+      applyStored(data);
+      if (data.__view) {
+        const cat = catFor(data.__view);
+        topCats.forEach((x) => x.classList.toggle("active", x.dataset.cat === cat));
+        applySidebarVisibility(cat);
+        activateView(data.__view);
+      }
+    }
+
+    /* ===================== 载入示例 ===================== */
+    document.getElementById("loadLowerSample").addEventListener("click", () => {
+      document.getElementById("metric").value = "FDR";
+      document.getElementById("sampleSize").value = "38";
+      document.getElementById("failures").value = "1";
+      document.getElementById("confidence").value = "80%";
+      document.getElementById("target").value = "90%";
+      document.getElementById("method").value = "exact";
+      document.getElementById("intervalType").value = "lower";
+      document.getElementById("digits").value = "4";
+      calculate(); saveInputs();
+    });
+    document.getElementById("loadSchemeSample").addEventListener("click", () => {
+      document.getElementById("q1Input").value = "95%";
+      document.getElementById("betaInput").value = "10%";
+      document.getElementById("mInput").value = "50";
+      document.getElementById("maxSearchN").value = "10000";
+      calculateScheme(); saveInputs();
+    });
+    document.getElementById("loadChiSample").addEventListener("click", () => {
+      chiModeSel.value = "mtbf";
+      document.getElementById("chiT").value = "1000";
+      document.getElementById("chir").value = "0";
+      document.getElementById("chiConf").value = "80%";
+      document.getElementById("chiTmission").value = "100";
+      document.getElementById("chiDigits").value = "4";
+      chiShowGroups(); calculateChi(); saveInputs();
+    });
+    document.getElementById("loadSampleExample").addEventListener("click", () => {
+      document.getElementById("sampleName").value = "维修时间样本";
+      document.getElementById("sampleData").value = "18, 22, 16, 25, 20, 19, 23, 17, 21, 24\n12, 14, 11, 15, 13, 16, 14, 13, 15, 12";
+      computeSampleStats(); saveInputs();
+    });
+
     /* ===================== 初始化 ===================== */
+    restoreInputs();
     calculate();
     calculateScheme();
-    loadMaintainSample.click();
+    if (!getStored() || !document.getElementById("correctiveTimes").value.trim()) {
+      loadMaintainSample.click();
+    } else {
+      calculateMaintainability();
+    }
     chiShowGroups();
     calculateChi();
     renderDistAll();
-
-    // default to overview
-    topCats.forEach((x) => x.classList.toggle("active", x.dataset.cat === "overview"));
-    applySidebarVisibility("overview");
-    activateView("overview");
+    applyStored(getStored());
+    if (distSliderEl) {
+      distSliderValEl.textContent = fmtN(parseFloat(distSliderEl.value));
+      if (typeof syncSlider === "function") syncSlider();
+    }
+    renderDistFormulas();
+    drawDistChart();
+    if (!getStored() || !getStored().__view) {
+      topCats.forEach((x) => x.classList.toggle("active", x.dataset.cat === "overview"));
+      applySidebarVisibility("overview");
+      activateView("overview");
+    }
+    document.addEventListener("input", saveInputs);
+    document.addEventListener("change", saveInputs);
   </script>
 </body>
 </html>
